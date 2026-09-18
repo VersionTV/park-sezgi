@@ -1,0 +1,205 @@
+[
+  {
+    "name": "Starbucks Kameroğlu Metrohome",
+    "type": "cafe",
+    "lat": 41.0138,
+    "lon": 28.6372,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Espressolab Metrohome",
+    "type": "cafe",
+    "lat": 41.0142,
+    "lon": 28.6375,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "BigChefs Beylikdüzü Metrohome",
+    "type": "restaurant",
+    "lat": 41.0135,
+    "lon": 28.6370,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Happy Moon's Kameroğlu",
+    "type": "restaurant",
+    "lat": 41.0145,
+    "lon": 28.6378,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Gua Kameroğlu Kafe & Bistro",
+    "type": "cafe",
+    "lat": 41.0151,
+    "lon": 28.6377,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Mado Dondurma & Kafe",
+    "type": "cafe",
+    "lat": 41.0132,
+    "lon": 28.6368,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Kahve Dünyası Algötür",
+    "type": "cafe",
+    "lat": 41.0140,
+    "lon": 28.6374,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Cookshop Metrohome Cadde",
+    "type": "restaurant",
+    "lat": 41.0136,
+    "lon": 28.6371,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Huqqa Lounge & Nargile",
+    "type": "bar",
+    "lat": 41.0146,
+    "lon": 28.6380,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Gloria Jean's Coffees",
+    "type": "cafe",
+    "lat": 41.0139,
+    "lon": 28.6373,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "The Hunger Bistro",
+    "type": "restaurant",
+    "lat": 41.0144,
+    "lon": 28.6377,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Midpoint Cadde Çarşısı",
+    "type": "restaurant",
+    "lat": 41.0148,
+    "lon": 28.6382,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Komşu Fırın & Cafe",
+    "type": "bakery",
+    "lat": 41.0133,
+    "lon": 28.6369,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Nusr-Et Burger & Steakhouse",
+    "type": "restaurant",
+    "lat": 41.0147,
+    "lon": 28.6381,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "CarrefourSA Gurme Metrohome",
+    "type": "supermarket",
+    "lat": 41.0130,
+    "lon": 28.6366,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Kameroğlu Botanik Eczanesi",
+    "type": "pharmacy",
+    "lat": 41.0142,
+    "lon": 28.6377,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Macrocenter Metrohome",
+    "type": "supermarket",
+    "lat": 41.0134,
+    "lon": 28.6370,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Leman Kültür Beylikdüzü",
+    "type": "bar",
+    "lat": 41.0149,
+    "lon": 28.6383,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Voi Coffee Company",
+    "type": "cafe",
+    "lat": 41.0141,
+    "lon": 28.6375,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Köfteci Yusuf Cadde",
+    "type": "restaurant",
+    "lat": 41.0128,
+    "lon": 28.6364,
+    "zone": "Kameroğlu Metrohome"
+  },
+  {
+    "name": "Büyükçekmece Sahil Balıkçısı",
+    "type": "restaurant",
+    "lat": 41.0208,
+    "lon": 28.5830,
+    "zone": "Büyükçekmece Kordonboyu"
+  },
+  {
+    "name": "Mado Kordonboyu",
+    "type": "cafe",
+    "lat": 41.0204,
+    "lon": 28.5836,
+    "zone": "Büyükçekmece Kordonboyu"
+  },
+  {
+    "name": "Kordon Lounge Kafe",
+    "type": "cafe",
+    "lat": 41.0206,
+    "lon": 28.5833,
+    "zone": "Büyükçekmece Kordonboyu"
+  },
+  {
+    "name": "Kordon Balık Evi",
+    "type": "restaurant",
+    "lat": 41.0210,
+    "lon": 28.5828,
+    "zone": "Büyükçekmece Kordonboyu"
+  },
+  {
+    "name": "Starbucks Kordonboyu Sahil",
+    "type": "cafe",
+    "lat": 41.0202,
+    "lon": 28.5839,
+    "zone": "Büyükçekmece Kordonboyu"
+  },
+  {
+    "name": "Albatros Çay Bahçesi & Restoran",
+    "type": "restaurant",
+    "lat": 41.0116,
+    "lon": 28.5770,
+    "zone": "Albatros Sahili"
+  },
+  {
+    "name": "Albatros Balıkçısı",
+    "type": "restaurant",
+    "lat": 41.0120,
+    "lon": 28.5775,
+    "zone": "Albatros Sahili"
+  },
+  {
+    "name": "Barış Kafe & Bistro Yaşam Vadisi",
+    "type": "cafe",
+    "lat": 41.0022,
+    "lon": 28.6408,
+    "zone": "Beylikdüzü Yaşam Vadisi"
+  },
+  {
+    "name": "Vadi Park Kafe",
+    "type": "cafe",
+    "lat": 41.0018,
+    "lon": 28.6415,
+    "zone": "Beylikdüzü Yaşam Vadisi"
+  }
+]

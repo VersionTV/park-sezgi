@@ -1,0 +1,272 @@
+/* style.css - ParkSezgi Modern Arayüz */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    z-index: 10;
+}
+
+/* Custom Leaflet Container */
+.leaflet-container {
+    background-color: #f1f5f9;
+    font-family: inherit;
+}
+
+/* Minimal Sade Açık Gri Harita Görünümü (Sıfır API Key, net sokak görünümü verir) */
+.tiles-minimal-clean .leaflet-tile {
+    filter: grayscale(88%) contrast(96%) brightness(104%);
+}
+
+/* Minimal Koyu Harita Görünümü (Sıfır API Key) */
+.tiles-dark-clean .leaflet-tile {
+    filter: brightness(0.68) invert(1) contrast(2.1) hue-rotate(200deg) saturate(0.2) brightness(0.85);
+}
+
+/* Leaflet Atıf & Lisans Barı (OSM Tile Usage Policy & Copyright) */
+.leaflet-control-attribution {
+    background: rgba(15, 23, 42, 0.88) !important;
+    backdrop-filter: blur(6px);
+    color: #94a3b8 !important;
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+    border-top-left-radius: 8px;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    border-bottom: none;
+    border-right: none;
+}
+.leaflet-control-attribution a {
+    color: #38bdf8 !important;
+    text-decoration: underline !important;
+}
+.leaflet-control-attribution a:hover {
+    color: #7dd3fc !important;
+}
+
+/* Harita Üzerinde Canlı Radar / Sonar Tarama Dalgası */
+.radar-scanner-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+}
+
+.radar-wave {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #38bdf8;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 100%);
+    animation: radar-pulse 2.2s cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
+    pointer-events: none;
+}
+
+.radar-wave-2 {
+    animation-delay: 0.7s;
+}
+
+.radar-wave-3 {
+    animation-delay: 1.4s;
+}
+
+@keyframes radar-pulse {
+    0% {
+        width: 10px;
+        height: 10px;
+        opacity: 1;
+        border-width: 3px;
+    }
+    70% {
+        opacity: 0.5;
+    }
+    100% {
+        width: 380px;
+        height: 380px;
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+
+/* Custom Target Marker with Ripple */
+.target-marker-icon {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    background: #ef4444;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.85);
+}
+
+.target-marker-icon::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 34px;
+    height: 34px;
+    border: 2px solid #ef4444;
+    border-radius: 50%;
+    animation: pulse-ring 1.8s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.6);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+/* Harita Üzerindeki #1, #2, #3 Öneri Rozetleri */
+.rank-badge-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    font-weight: 800;
+    font-size: 11px;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+}
+
+.rank-badge-marker:hover {
+    transform: scale(1.22);
+    z-index: 1000 !important;
+}
+
+.rank-badge-1 {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: 2.5px solid #ffffff;
+    width: 38px;
+    height: 38px;
+    animation: bounce-gentle 2.4s infinite;
+}
+
+.rank-badge-1::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 9999px;
+    border: 2px solid #10b981;
+    animation: pulse-ring 2s infinite;
+}
+
+.rank-badge-2 {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border: 2px solid #ffffff;
+    width: 34px;
+    height: 34px;
+}
+
+.rank-badge-3 {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    border: 2px solid #ffffff;
+    width: 32px;
+    height: 32px;
+}
+
+@keyframes bounce-gentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Yürüme Çizgisi Animasyonu */
+.animated-walking-route {
+    stroke-dasharray: 8, 12;
+    animation: dash-move 1.2s linear infinite;
+}
+
+@keyframes dash-move {
+    to {
+        stroke-dashoffset: -40;
+    }
+}
+
+/* Glassmorphism Paneller */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* Arama Sonuçları Dropdown */
+#search-results {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.search-item {
+    transition: background-color 0.15s ease;
+}
+
+.search-item:hover {
+    background-color: #334155 !important;
+}
+
+/* Harita Katman Seçici Butonu */
+.map-layer-selector {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 25;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Animated Loading Spinner */
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid #38bdf8;
+    width: 20px;
+    height: 20px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Sokak çizgisi hover */
+.leaflet-interactive:hover {
+    filter: drop-shadow(0 0 8px currentColor);
+}
