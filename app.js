@@ -29,6 +29,7 @@ let selectedStreetData = null;
 let searchDebounceTimer = null;
 let fetchDebounceTimer = null;
 let isOfflineFallbackActive = false;
+let currentSheetState = 'half'; // Mobil çekmece durumu: 'peek', 'half', 'full'
 
 // 1. Kademe: İstemci Tarafı Mekansal Önbellek (Spatial Street Cache)
 const spatialStreetCache = new Map();
@@ -81,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initMap();
     initEventListeners();
     initSearch();
+    initMobileBottomSheet();
     await Promise.all([
         loadLocalCommercialPOIs(),
         loadOfflinePilotStreets()
@@ -148,6 +150,9 @@ function initMap() {
     // Haritaya tıklama ile hedef belirleme
     map.on('click', (e) => {
         setNewTarget(e.latlng.lat, e.latlng.lng, 'Haritadan Seçilen Nokta');
+        if (window.innerWidth < 768) {
+            setSheetState('peek');
+        }
     });
 }
 
@@ -291,6 +296,9 @@ function renderSearchResults(items, query, isLocalOnly = false) {
             setNewTarget(item.lat, item.lon, item.name);
             searchResults.classList.add('hidden');
             document.getElementById('search-input').value = item.name;
+            if (window.innerWidth < 768) {
+                setSheetState('peek');
+            }
         });
 
         searchResults.appendChild(div);
@@ -330,6 +338,10 @@ async function fetchNominatimSearch(val, alreadyShown) {
 
 // UI Event Dinleyicileri
 function initEventListeners() {
+    // Canlı GPS Butonları (Hem Çekmece İçi Hem Harita Üstü FAB)
+    document.getElementById('btn-use-my-location')?.addEventListener('click', useCurrentLocation);
+    document.getElementById('fab-current-location')?.addEventListener('click', useCurrentLocation);
+
     // Harita Palet Seçici
     document.getElementById('tile-layer-select')?.addEventListener('change', (e) => {
         setMapTileStyle(e.target.value);
@@ -346,6 +358,9 @@ function initEventListeners() {
                     b.classList.remove('active');
                 });
                 e.currentTarget.classList.add('active');
+                if (window.innerWidth < 768) {
+                    setSheetState('peek');
+                }
             }
         });
     });
@@ -690,6 +705,19 @@ function updateTopRecommendationsAndBadges(scoredStreets) {
 
     document.getElementById('scanned-streets-count').innerText = `${scoredStreets.length} yol analiz edildi`;
 
+    // Mobil Mini Peek Barı Özeti Güncellemesi
+    const miniSummary = document.getElementById('mini-peek-summary');
+    if (miniSummary) {
+        if (validStreets.length > 0) {
+            const topOne = validStreets[0];
+            miniSummary.innerHTML = `🎯 <span class="text-emerald-400 font-bold">#1 ${topOne.scoreResult.streetName}</span> (%${topOne.scoreResult.score}) • ${topOne.walkMinutes} dk`;
+        } else if (scoredStreets.length > 0) {
+            miniSummary.innerText = `🔍 ${scoredStreets.length} yol tarandı • Açık kamu sokağı bulunamadı`;
+        } else {
+            miniSummary.innerText = `⚠️ Hedef taranıyor veya sunucu meşgul`;
+        }
+    }
+
     if (scoredStreets.length === 0) {
         listContainer.innerHTML = `
             <div class="text-xs text-[#FFF1FB]/70 p-4 bg-[#26184A]/80 rounded-[18px] border border-[#B45CFF]/30 text-center space-y-2.5 shadow-sm">
@@ -984,4 +1012,115 @@ function getOfflinePilotStreetsInRadius(targetLat, targetLon, radiusMeters) {
     });
 
     return matchedWays;
+}
+
+// ==========================================================================
+// Mobil 3-Kademeli Alt Çekmece (Bottom Sheet) & Canlı GPS Konum Yönetimi
+// ==========================================================================
+
+// Çekmece Durumunu Ayarla ('peek', 'half', 'full')
+function setSheetState(state) {
+    const sidebar = document.getElementById('sidebar');
+    const chevron = document.getElementById('sheet-chevron-icon');
+    const label = document.getElementById('mini-peek-action-label');
+    if (!sidebar) return;
+
+    sidebar.classList.remove('sheet-peek', 'sheet-half', 'sheet-full');
+    sidebar.classList.add(`sheet-${state}`);
+    currentSheetState = state;
+
+    if (chevron) {
+        if (state === 'full') {
+            chevron.style.transform = 'rotate(180deg)';
+            if (label) label.innerText = 'Küçült';
+        } else if (state === 'peek') {
+            chevron.style.transform = 'rotate(0deg)';
+            if (label) label.innerText = 'Aç';
+        } else {
+            chevron.style.transform = 'rotate(0deg)';
+            if (label) label.innerText = 'Detaylar';
+        }
+    }
+}
+
+// Mobil Alt Çekmece Etkileşimlerini Başlat
+function initMobileBottomSheet() {
+    const handleBar = document.getElementById('sheet-header-handle');
+    if (!handleBar) return;
+
+    // Tıklama ile kademe geçişi: peek -> half -> full -> peek
+    handleBar.addEventListener('click', () => {
+        if (currentSheetState === 'peek') {
+            setSheetState('half');
+        } else if (currentSheetState === 'half') {
+            setSheetState('full');
+        } else {
+            setSheetState('peek');
+        }
+    });
+
+    // Dokunmatik Kaydırma (Touch Drag / Swipe) Desteği
+    let touchStartY = 0;
+    handleBar.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    handleBar.addEventListener('touchend', (e) => {
+        const touchEndY = e.changedTouches[0].clientY;
+        const deltaY = touchEndY - touchStartY;
+
+        if (deltaY < -35) {
+            // Yukarı kaydırma
+            if (currentSheetState === 'peek') setSheetState('half');
+            else if (currentSheetState === 'half') setSheetState('full');
+        } else if (deltaY > 35) {
+            // Aşağı kaydırma
+            if (currentSheetState === 'full') setSheetState('half');
+            else if (currentSheetState === 'half') setSheetState('peek');
+        }
+    }, { passive: true });
+}
+
+// HTML5 Canlı GPS ile Cihazın Anlık Konumunu Kullan
+function useCurrentLocation() {
+    if (!navigator.geolocation) {
+        showToast("⚠️ Tarayıcınız konum servisini desteklemiyor.");
+        return;
+    }
+
+    showToast("📍 Konumunuz alınıyor...");
+    setLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            setLoading(false);
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            setNewTarget(lat, lon, '📍 Mevcut Konumum');
+            showToast("✅ Konumunuz alındı, yakındaki sokaklar taranıyor!");
+
+            // Mobilde haritayı öne çıkarmak için çekmeceyi peek moduna al
+            if (window.innerWidth < 768) {
+                setSheetState('peek');
+            }
+        },
+        (error) => {
+            setLoading(false);
+            let msg = "Konum alınamadı.";
+            if (error.code === error.PERMISSION_DENIED) {
+                msg = "Konum erişim izni verilmedi. Lütfen tarayıcı ayarlarından konuma izin verin.";
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                msg = "Konum bilgisine ulaşılamıyor.";
+            } else if (error.code === error.TIMEOUT) {
+                msg = "Konum alma zaman aşımına uğradı.";
+            }
+            showToast(`⚠️ ${msg}`);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 30000
+        }
+    );
 }

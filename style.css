@@ -526,3 +526,73 @@ input[type=range].liquid-slider::-webkit-slider-thumb:active {
     filter: drop-shadow(0 0 10px currentColor);
 }
 
+/* ==========================================================================
+   Apple Maps Tarzı 3-Kademeli Mobil Alt Çekmece (Bottom Sheet) & GPS FAB
+   ========================================================================== */
+@media (max-width: 767px) {
+    #sidebar {
+        height: 50vh;
+        transition: height 0.38s cubic-bezier(0.16, 1, 0.3, 1), transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: height;
+        overflow: hidden;
+    }
+
+    #sidebar.sheet-peek {
+        height: 74px !important;
+    }
+
+    #sidebar.sheet-half {
+        height: 50vh !important;
+    }
+
+    #sidebar.sheet-full {
+        height: 86vh !important;
+    }
+
+    /* Peek modundayken iç listenin taşmasını önle */
+    #sidebar.sheet-peek .sidebar-scroll-content {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .sidebar-scroll-content {
+        transition: opacity 0.22s ease;
+    }
+
+    #sheet-header-handle {
+        touch-action: none;
+    }
+}
+
+@media (min-width: 768px) {
+    #sheet-mini-peek {
+        display: none !important;
+    }
+}
+
+/* Apple GPS Floating Action Button */
+.apple-gps-fab {
+    background: rgba(26, 16, 51, 0.88) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(180, 92, 255, 0.3) !important;
+    box-shadow: 
+        0 12px 30px rgba(10, 5, 22, 0.65),
+        inset 0 1px 1px rgba(255, 241, 251, 0.25) !important;
+    color: var(--accent-cyan) !important;
+    transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.apple-gps-fab:hover {
+    border-color: var(--accent-cyan) !important;
+    box-shadow: 
+        0 14px 34px rgba(10, 5, 22, 0.7),
+        0 0 18px rgba(75, 227, 255, 0.35),
+        inset 0 1px 1px rgba(255, 241, 251, 0.35) !important;
+    transform: scale(1.06);
+}
+
+.apple-gps-fab:active {
+    transform: scale(0.92) !important;
+}
+

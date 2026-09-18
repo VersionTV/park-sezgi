@@ -18,12 +18,27 @@
     <!-- Harita Katmanı (Tüm Görünüm Alanı) -->
     <div id="map"></div>
 
-    <!-- Apple Spatial Floating Island (Sol Kontrol & Öneri Paneli) -->
-    <aside class="w-full h-[52vh] md:h-auto md:max-h-[calc(100vh-2.5rem)] md:w-[400px] lg:w-[420px] fixed bottom-0 left-0 right-0 md:bottom-auto md:right-auto md:top-5 md:left-5 z-30 liquid-glass-panel md:rounded-[28px] rounded-t-[28px] flex flex-col pointer-events-auto transition-all duration-300">
+    <!-- Apple Spatial Floating Island / 3-Kademeli Mobil Alt Çekmece -->
+    <aside id="sidebar" class="w-full fixed bottom-0 left-0 right-0 z-30 liquid-glass-panel rounded-t-[28px] md:rounded-[28px] md:w-[400px] lg:w-[420px] md:bottom-auto md:right-auto md:top-5 md:left-5 md:max-h-[calc(100vh-2.5rem)] flex flex-col pointer-events-auto transition-all sheet-half">
         
-        <!-- Mobil Sheet Tutamaç -->
-        <div class="md:hidden pt-2.5 pb-1">
+        <!-- Mobil Tutamaç ve Mini Peek Barı (Sadece Mobilde Görünür) -->
+        <div id="sheet-header-handle" class="md:hidden pt-2.5 pb-2 px-4 cursor-pointer select-none border-b border-white/5 shrink-0">
             <div class="sheet-grab-handle"></div>
+            <!-- Mini Peek Barı: Kapalıyken tek satırda en iyi öneri ve yukarı açma göstergesi -->
+            <div id="sheet-mini-peek" class="flex items-center justify-between mt-1 text-xs">
+                <div class="flex items-center space-x-2 truncate">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] shrink-0 animate-pulse"></span>
+                    <span id="mini-peek-summary" class="text-[#FFF1FB] font-semibold truncate text-[11.5px]">
+                        🎯 Hedef: B.Çekmece Kordon • Analiz ediliyor...
+                    </span>
+                </div>
+                <div class="flex items-center space-x-1.5 shrink-0 text-[#4BE3FF] font-medium text-[11px] bg-[#4BE3FF]/10 px-2.5 py-0.5 rounded-full border border-[#4BE3FF]/30 ml-2">
+                    <span id="mini-peek-action-label">Detaylar</span>
+                    <svg id="sheet-chevron-icon" class="w-3.5 h-3.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                </div>
+            </div>
         </div>
 
         <!-- Header -->
@@ -49,7 +64,23 @@
         </div>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div class="sidebar-scroll-content flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+            <!-- Canlı Konumumu Kullan Butonu (GPS) -->
+            <button id="btn-use-my-location" class="w-full py-2.5 px-3.5 rounded-[16px] bg-[#4BE3FF]/15 hover:bg-[#4BE3FF]/25 border border-[#4BE3FF]/40 text-[#4BE3FF] text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm active:scale-[0.98] cursor-pointer">
+                <svg class="w-4 h-4 text-[#4BE3FF] shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>📍 Şu Anki Konumumu Kullan (Canlı GPS)</span>
+            </button>
+
+            <!-- Ayırıcı Çizgi -->
+            <div class="flex items-center gap-2 text-[10px] text-[#FFF1FB]/40 justify-center">
+                <span class="w-10 h-[1px] bg-white/10"></span>
+                <span>VEYA HEDEF ARAYIN</span>
+                <span class="w-10 h-[1px] bg-white/10"></span>
+            </div>
 
             <!-- Apple Spotlight Arama Çubuğu -->
             <div class="relative z-40">
@@ -292,6 +323,14 @@
         </div>
     </div>
 
+    <!-- Harita Üzerinde Canlı GPS Yüzen Buton (Apple Maps FAB) -->
+    <button id="fab-current-location" class="apple-gps-fab fixed right-4 bottom-[88px] md:bottom-6 z-25 w-12 h-12 rounded-full flex items-center justify-center text-[#4BE3FF] border border-[#B45CFF]/30 shadow-2xl active:scale-90 transition-all cursor-pointer" title="Mevcut Konumumu Bul">
+        <svg class="w-5 h-5 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+    </button>
+
     <!-- VisionOS Harita Katman & Renk Paleti Seçici -->
     <div class="map-layer-selector">
         <div class="flex items-center bg-[#1A1033]/85 backdrop-blur-2xl rounded-2xl p-1 border border-[#B45CFF]/30 shadow-2xl">
@@ -311,7 +350,7 @@
 
     <!-- Sokak Detay ve İstisna/Raporlama Modalı (Apple Bottom Sheet) -->
     <div id="detail-modal" 
-         class="fixed bottom-4 left-4 right-4 md:left-auto md:right-5 md:w-[390px] z-40 liquid-glass-panel rounded-[26px] p-5 shadow-2xl transition-all duration-350 transform translate-y-full opacity-0 pointer-events-none">
+         class="fixed bottom-0 left-0 right-0 md:bottom-5 md:left-auto md:right-5 md:w-[390px] z-50 liquid-glass-panel rounded-t-[28px] md:rounded-[26px] p-5 pb-8 md:pb-5 shadow-2xl transition-all duration-350 transform translate-y-full opacity-0 pointer-events-none max-h-[85vh] overflow-y-auto">
         
         <!-- Sheet Tutamaç -->
         <div class="sheet-grab-handle"></div>
