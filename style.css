@@ -1,18 +1,39 @@
-/* style.css - ParkSezgi Modern Arayüz */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* style.css - ParkSezgi Apple Liquid Glass UI/UX Design System (Custom Palette Edition) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --bg-dark: #1A1033;       /* Midnight Violet Base */
+    --accent-pink: #FF4FD8;   /* Neon Magenta / Danger */
+    --accent-purple: #B45CFF; /* Electric Purple / Ambient */
+    --accent-cyan: #4BE3FF;   /* Bright Cyan / Primary Active */
+    --text-light: #FFF1FB;    /* Frost Pearl White */
+    --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+    --spring-curve: cubic-bezier(0.16, 1, 0.3, 1);
+    --liquid-blur: blur(28px) saturate(200%) contrast(105%);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--apple-font);
     margin: 0;
     padding: 0;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
-    background-color: #0f172a;
-    color: #f8fafc;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    letter-spacing: -0.015em;
+    user-select: none;
 }
 
 #map {
+    position: absolute;
+    top: 0;
+    left: 0;
     height: 100%;
     width: 100%;
     z-index: 10;
@@ -20,41 +41,236 @@ body {
 
 /* Custom Leaflet Container */
 .leaflet-container {
-    background-color: #f1f5f9;
+    background-color: var(--bg-dark);
     font-family: inherit;
 }
 
-/* Minimal Sade Açık Gri Harita Görünümü (Sıfır API Key, net sokak görünümü verir) */
-.tiles-minimal-clean .leaflet-tile {
-    filter: grayscale(88%) contrast(96%) brightness(104%);
+/* ==========================================================================
+   Apple Liquid Glass Design System (Palette: #1A1033, #FF4FD8, #B45CFF, #4BE3FF, #FFF1FB)
+   ========================================================================== */
+
+/* 1. Spatial Floating Island Panel (Kenar Çubuğu / Ada) */
+.liquid-glass-panel {
+    background: linear-gradient(135deg, rgba(180, 92, 255, 0.12) 0%, rgba(75, 227, 255, 0.04) 100%),
+                rgba(26, 16, 51, 0.82);
+    backdrop-filter: var(--liquid-blur);
+    -webkit-backdrop-filter: var(--liquid-blur);
+    border: 1px solid rgba(180, 92, 255, 0.24);
+    box-shadow: 
+        0 24px 60px -12px rgba(10, 5, 22, 0.75),
+        0 0 0 1px rgba(255, 241, 251, 0.06) inset,
+        0 1px 1px 0 rgba(255, 241, 251, 0.35) inset;
+    transition: box-shadow 0.3s var(--spring-curve), transform 0.3s var(--spring-curve);
 }
 
-/* Minimal Koyu Harita Görünümü (Sıfır API Key) */
-.tiles-dark-clean .leaflet-tile {
-    filter: brightness(0.68) invert(1) contrast(2.1) hue-rotate(200deg) saturate(0.2) brightness(0.85);
+/* 2. Glass Cards (İç Bölüm & Kartlar) */
+.liquid-glass-card {
+    background: linear-gradient(135deg, rgba(180, 92, 255, 0.09) 0%, rgba(75, 227, 255, 0.03) 100%),
+                rgba(38, 24, 74, 0.60);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(180, 92, 255, 0.18);
+    box-shadow: 
+        0 8px 24px -4px rgba(10, 5, 22, 0.4),
+        inset 0 1px 1px 0 rgba(255, 241, 251, 0.2);
+    border-radius: 18px;
+    transition: all 0.28s var(--spring-curve);
 }
 
-/* Leaflet Atıf & Lisans Barı (OSM Tile Usage Policy & Copyright) */
-.leaflet-control-attribution {
-    background: rgba(15, 23, 42, 0.88) !important;
-    backdrop-filter: blur(6px);
-    color: #94a3b8 !important;
-    font-size: 10px !important;
-    padding: 3px 8px !important;
-    border-top-left-radius: 8px;
-    border: 1px solid rgba(51, 65, 85, 0.6);
-    border-bottom: none;
-    border-right: none;
-}
-.leaflet-control-attribution a {
-    color: #38bdf8 !important;
-    text-decoration: underline !important;
-}
-.leaflet-control-attribution a:hover {
-    color: #7dd3fc !important;
+.liquid-glass-card:hover {
+    background: linear-gradient(135deg, rgba(180, 92, 255, 0.18) 0%, rgba(75, 227, 255, 0.08) 100%),
+                rgba(45, 28, 88, 0.78);
+    border-color: rgba(75, 227, 255, 0.45);
+    box-shadow: 
+        0 14px 34px -4px rgba(10, 5, 22, 0.6),
+        0 0 22px rgba(75, 227, 255, 0.15),
+        inset 0 1px 1.5px 0 rgba(255, 241, 251, 0.4);
+    transform: translateY(-2px);
 }
 
-/* Harita Üzerinde Canlı Radar / Sonar Tarama Dalgası */
+.liquid-glass-card:active {
+    transform: scale(0.985);
+}
+
+/* 3. Apple Spotlight Arama Kutusu */
+.spotlight-input-container {
+    background: rgba(38, 24, 74, 0.52);
+    border: 1px solid rgba(180, 92, 255, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 
+        0 4px 16px rgba(10, 5, 22, 0.35),
+        inset 0 1px 1px rgba(255, 241, 251, 0.18);
+    border-radius: 16px;
+    transition: all 0.3s var(--spring-curve);
+}
+
+.spotlight-input-container:focus-within {
+    background: rgba(45, 28, 88, 0.7);
+    border-color: var(--accent-cyan);
+    box-shadow: 
+        0 0 0 3px rgba(75, 227, 255, 0.28),
+        0 0 24px rgba(75, 227, 255, 0.2),
+        0 12px 28px rgba(10, 5, 22, 0.5),
+        inset 0 1px 1.5px rgba(255, 241, 251, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Arama Sonuçları Açılır Menüsü */
+#search-results {
+    background: rgba(26, 16, 51, 0.96) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(180, 92, 255, 0.28) !important;
+    border-radius: 18px !important;
+    box-shadow: 
+        0 20px 40px -8px rgba(10, 5, 22, 0.8),
+        inset 0 1px 1px rgba(255, 241, 251, 0.25) !important;
+}
+
+.search-item {
+    transition: all 0.18s var(--spring-curve);
+}
+
+.search-item:hover {
+    background-color: rgba(180, 92, 255, 0.2) !important;
+    padding-left: 14px;
+}
+
+/* 4. Apple Segmented Control & Pill Butonlar */
+.liquid-pill-btn {
+    background: rgba(180, 92, 255, 0.08);
+    border: 1px solid rgba(180, 92, 255, 0.2);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 13px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-light);
+    transition: all 0.24s var(--spring-curve);
+    box-shadow: inset 0 1px 0.5px rgba(255, 241, 251, 0.15);
+}
+
+.liquid-pill-btn:hover {
+    background: rgba(180, 92, 255, 0.18);
+    border-color: rgba(75, 227, 255, 0.45);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.liquid-pill-btn:active {
+    transform: scale(0.96);
+}
+
+.liquid-pill-btn.active,
+.liquid-pill-btn[data-active="true"] {
+    background: rgba(75, 227, 255, 0.18) !important;
+    border-color: rgba(75, 227, 255, 0.55) !important;
+    box-shadow: 
+        0 2px 8px rgba(10, 5, 22, 0.3),
+        inset 0 1px 1px rgba(255, 241, 251, 0.2) !important;
+    color: var(--accent-cyan) !important;
+    font-weight: 600;
+}
+
+/* 5. iOS Tarzı Sıvı Mesafe Kaydırıcı */
+input[type=range].liquid-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 7px;
+    border-radius: 9999px;
+    background: rgba(180, 92, 255, 0.18);
+    outline: none;
+    border: 1px solid rgba(180, 92, 255, 0.22);
+    box-shadow: inset 0 1px 2px rgba(10, 5, 22, 0.5);
+}
+
+input[type=range].liquid-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--text-light);
+    border: 2.5px solid var(--accent-cyan);
+    box-shadow: 
+        0 2px 10px rgba(10, 5, 22, 0.5),
+        0 0 14px rgba(75, 227, 255, 0.85);
+    cursor: pointer;
+    transition: transform 0.16s var(--spring-curve), box-shadow 0.16s var(--spring-curve);
+}
+
+input[type=range].liquid-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.18);
+    box-shadow: 
+        0 4px 16px rgba(10, 5, 22, 0.6),
+        0 0 20px rgba(75, 227, 255, 1);
+}
+
+input[type=range].liquid-slider::-webkit-slider-thumb:active {
+    transform: scale(0.95);
+}
+
+/* 6. Apple Dynamic Island (Harita Üstü Canlı Tarama Bildirimi) */
+.dynamic-island-badge {
+    background: rgba(26, 16, 51, 0.88);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(180, 92, 255, 0.3);
+    box-shadow: 
+        0 20px 40px -8px rgba(10, 5, 22, 0.7),
+        0 0 26px rgba(75, 227, 255, 0.25),
+        inset 0 1px 1px rgba(255, 241, 251, 0.35);
+    border-radius: 9999px;
+    transition: all 0.4s var(--spring-curve);
+}
+
+/* 7. Apple Sheet Tutamaç (Bottom Sheet Grab Handle) */
+.sheet-grab-handle {
+    width: 40px;
+    height: 4.5px;
+    border-radius: 9999px;
+    background: rgba(255, 241, 251, 0.3);
+    margin: 0 auto 10px auto;
+    transition: background 0.2s ease;
+}
+
+.sheet-grab-handle:hover {
+    background: rgba(255, 241, 251, 0.55);
+}
+
+/* 8. VisionOS Harita Katman Seçici Kapsülü */
+.map-layer-selector {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 35;
+}
+
+.map-layer-selector select {
+    background: rgba(26, 16, 51, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(180, 92, 255, 0.25) !important;
+    box-shadow: 
+        0 8px 24px rgba(10, 5, 22, 0.5),
+        inset 0 1px 1px rgba(255, 241, 251, 0.25) !important;
+    border-radius: 14px !important;
+    color: var(--text-light) !important;
+    transition: all 0.25s var(--spring-curve) !important;
+}
+
+.map-layer-selector select:hover {
+    border-color: var(--accent-cyan) !important;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Harita Ögeleri & Rozetler
+   ========================================================================== */
+
+/* Canlı Sonar / Radar Dalgası */
 .radar-scanner-container {
     position: relative;
     width: 80px;
@@ -102,7 +318,7 @@ body {
     }
 }
 
-/* Custom Target Marker with Ripple */
+/* Hedef Marker */
 .target-marker-icon {
     position: relative;
     width: 24px;
@@ -147,18 +363,19 @@ body {
     color: #ffffff;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.28s var(--spring-curve);
     position: relative;
 }
 
 .rank-badge-marker:hover {
-    transform: scale(1.22);
+    transform: scale(1.24);
     z-index: 1000 !important;
 }
 
 .rank-badge-1 {
     background: linear-gradient(135deg, #10b981, #059669);
     border: 2.5px solid #ffffff;
+    color: #ffffff;
     width: 38px;
     height: 38px;
     animation: bounce-gentle 2.4s infinite;
@@ -176,6 +393,7 @@ body {
 .rank-badge-2 {
     background: linear-gradient(135deg, #0284c7, #0369a1);
     border: 2px solid #ffffff;
+    color: #ffffff;
     width: 34px;
     height: 34px;
 }
@@ -183,6 +401,7 @@ body {
 .rank-badge-3 {
     background: linear-gradient(135deg, #0d9488, #0f766e);
     border: 2px solid #ffffff;
+    color: #ffffff;
     width: 32px;
     height: 32px;
 }
@@ -192,10 +411,11 @@ body {
     50% { transform: translateY(-5px); }
 }
 
-/* Yürüme Çizgisi Animasyonu */
+/* Yürüme Çizgisi */
 .animated-walking-route {
     stroke-dasharray: 8, 12;
     animation: dash-move 1.2s linear infinite;
+    filter: drop-shadow(0 0 8px #0284c7);
 }
 
 @keyframes dash-move {
@@ -204,36 +424,71 @@ body {
     }
 }
 
-/* Glassmorphism Paneller */
-.glass-panel {
-    background: rgba(15, 23, 42, 0.94);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.45);
+/* Leaflet Zoom Kontrolü (Apple Kapsülü) */
+.leaflet-bar {
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(10, 5, 22, 0.5) !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    background: rgba(26, 16, 51, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(180, 92, 255, 0.22) !important;
 }
 
-/* Arama Sonuçları Dropdown */
-#search-results {
-    background-color: #1e293b !important;
-    border: 1px solid #334155 !important;
-    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+.leaflet-bar a {
+    background-color: transparent !important;
+    color: var(--text-light) !important;
+    border-bottom: 1px solid rgba(180, 92, 255, 0.15) !important;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    font-size: 15px !important;
+    transition: all 0.2s ease !important;
 }
 
-.search-item {
-    transition: background-color 0.15s ease;
+.leaflet-bar a:hover {
+    background-color: rgba(180, 92, 255, 0.25) !important;
+    color: var(--accent-cyan) !important;
 }
 
-.search-item:hover {
-    background-color: #334155 !important;
+/* Leaflet Atıf Barı */
+.leaflet-control-attribution {
+    background: rgba(26, 16, 51, 0.85) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    color: rgba(255, 241, 251, 0.6) !important;
+    font-size: 10px !important;
+    padding: 3px 10px !important;
+    border-top-left-radius: 10px;
+    border: 1px solid rgba(180, 92, 255, 0.18);
+    border-bottom: none;
+    border-right: none;
+}
+.leaflet-control-attribution a {
+    color: var(--accent-cyan) !important;
+    text-decoration: none !important;
+    font-weight: 500;
+}
+.leaflet-control-attribution a:hover {
+    text-decoration: underline !important;
+    color: var(--accent-pink) !important;
 }
 
-/* Harita Katman Seçici Butonu */
-.map-layer-selector {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    z-index: 25;
+/* Kademeli Akışkan Giriş Animasyonu */
+@keyframes liquid-fade-slide {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-liquid-in {
+    animation: liquid-fade-slide 0.32s var(--spring-curve) both;
 }
 
 /* Scrollbar */
@@ -241,23 +496,23 @@ body {
     width: 5px;
 }
 ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.5);
+    background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 3px;
+    background: rgba(180, 92, 255, 0.25);
+    border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    background: rgba(180, 92, 255, 0.45);
 }
 
-/* Animated Loading Spinner */
+/* Loading Spinner */
 .spinner {
-    border: 3px solid rgba(255, 255, 255, 0.1);
+    border: 2.5px solid rgba(180, 92, 255, 0.18);
     border-radius: 50%;
-    border-top: 3px solid #38bdf8;
-    width: 20px;
-    height: 20px;
+    border-top: 2.5px solid var(--accent-cyan);
+    width: 18px;
+    height: 18px;
     animation: spin 0.8s linear infinite;
 }
 
@@ -268,5 +523,6 @@ body {
 
 /* Sokak çizgisi hover */
 .leaflet-interactive:hover {
-    filter: drop-shadow(0 0 8px currentColor);
+    filter: drop-shadow(0 0 10px currentColor);
 }
+

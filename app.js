@@ -335,7 +335,7 @@ function initEventListeners() {
         setMapTileStyle(e.target.value);
     });
 
-    // Hazır Konum Butonları
+    // Hazır Konum Butonları (Apple Liquid Pills)
     document.querySelectorAll('[data-preset]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const key = e.currentTarget.getAttribute('data-preset');
@@ -343,38 +343,33 @@ function initEventListeners() {
             if (loc) {
                 setNewTarget(loc.lat, loc.lon, loc.name);
                 document.querySelectorAll('[data-preset]').forEach(b => {
-                    b.classList.remove('bg-sky-600', 'text-white');
-                    b.classList.add('bg-slate-800/90', 'text-slate-300');
+                    b.classList.remove('active');
                 });
-                e.currentTarget.classList.add('bg-sky-600', 'text-white');
-                e.currentTarget.classList.remove('bg-slate-800/90', 'text-slate-300');
+                e.currentTarget.classList.add('active');
             }
         });
     });
 
-    // Zaman Filtresi
+    // Zaman Filtresi (Apple Segmented Control)
     document.querySelectorAll('[data-time]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             currentTimeMode = e.currentTarget.getAttribute('data-time');
             document.querySelectorAll('[data-time]').forEach(b => {
-                b.classList.remove('bg-sky-500', 'text-white', 'border-sky-400');
-                b.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                b.classList.remove('active');
             });
-            e.currentTarget.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
-            e.currentTarget.classList.add('bg-sky-500', 'text-white', 'border-sky-400');
-            
+            e.currentTarget.classList.add('active');
             renderStreets();
         });
     });
 
-    // Yarıçap Slider
+    // Yarıçap Slider (iOS Liquid Slider)
     const radiusSlider = document.getElementById('radius-slider');
     const radiusLabel = document.getElementById('radius-value');
     if (radiusSlider) {
         radiusSlider.addEventListener('input', (e) => {
             currentRadius = parseInt(e.target.value);
             const walkMin = Math.round(currentRadius / 80);
-            if (radiusLabel) radiusLabel.innerText = `${currentRadius}m (~${walkMin} dk yürüme)`;
+            if (radiusLabel) radiusLabel.innerText = `${currentRadius}m (~${walkMin} dk)`;
         });
 
         radiusSlider.addEventListener('change', () => {
@@ -697,15 +692,15 @@ function updateTopRecommendationsAndBadges(scoredStreets) {
 
     if (scoredStreets.length === 0) {
         listContainer.innerHTML = `
-            <div class="text-xs text-slate-400 p-4 bg-slate-800/80 rounded-xl border border-slate-750 text-center space-y-2.5 shadow-sm">
-                <div class="text-amber-400 font-bold flex items-center justify-center gap-1.5 text-xs">
-                    <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div class="text-xs text-[#FFF1FB]/70 p-4 bg-[#26184A]/80 rounded-[18px] border border-[#B45CFF]/30 text-center space-y-2.5 shadow-sm">
+                <div class="text-[#FF4FD8] font-bold flex items-center justify-center gap-1.5 text-xs">
+                    <svg class="w-4 h-4 text-[#FF4FD8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     <span>Sunucu Yanıtı Alınamadı</span>
                 </div>
-                <p class="text-[11px] leading-relaxed text-slate-300">
+                <p class="text-[11px] leading-relaxed text-[#FFF1FB]/60">
                     Canlı sunucu meşgul (hız sınırı) ve bu nokta pilot çevrimdışı alanın dışında.
                 </p>
-                <button id="btn-retry-fetch" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold shadow transition inline-flex items-center gap-1.5 cursor-pointer">
+                <button id="btn-retry-fetch" class="px-3.5 py-1.5 bg-[#4BE3FF]/20 hover:bg-[#4BE3FF]/30 text-[#4BE3FF] border border-[#4BE3FF]/40 rounded-xl text-xs font-semibold shadow transition inline-flex items-center gap-1.5 cursor-pointer active:scale-95">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     <span>Tekrar Dene</span>
                 </button>
@@ -719,7 +714,7 @@ function updateTopRecommendationsAndBadges(scoredStreets) {
 
     if (validStreets.length === 0) {
         listContainer.innerHTML = `
-            <div class="text-xs text-slate-400 p-3 bg-slate-800/70 rounded-xl border border-slate-700/60 leading-relaxed">
+            <div class="text-xs text-[#FFF1FB]/70 p-3.5 bg-[#26184A]/80 rounded-[18px] border border-[#B45CFF]/30 leading-relaxed">
                 Taranan ${scoredStreets.length} yolun tamamı özel mülk, marina, kapalı site veya ana arter olarak tespit edildi. Kamuya açık sakin ara sokak bulunamadı.
             </div>
         `;
@@ -749,26 +744,31 @@ function updateTopRecommendationsAndBadges(scoredStreets) {
         });
         topBadgesLayerGroup.addLayer(badgeMarker);
 
-        // Sol Panel Kartı
+        // Sol Panel Kartı (Apple Liquid Glass)
         const card = document.createElement('div');
-        card.className = 'p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 border border-slate-700/80 hover:border-emerald-400/60 cursor-pointer transition flex items-center justify-between shadow-sm';
+        card.className = 'liquid-glass-card p-3 rounded-[18px] cursor-pointer flex items-center justify-between shadow-md animate-liquid-in border border-white/10 hover:border-[#4BE3FF]/40 active:scale-[0.98] transition-all';
+        card.style.animationDelay = `${index * 0.08}s`;
         card.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center font-extrabold text-xs shadow-md ${
+            <div class="flex items-center space-x-3.5">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-sm border border-white/20 ${
                     rankNum === 1 
-                        ? 'bg-emerald-500 text-white shadow-emerald-500/30' 
-                        : (rankNum === 2 ? 'bg-sky-600 text-white' : 'bg-teal-600 text-white')
+                        ? 'bg-emerald-600 text-white' 
+                        : (rankNum === 2 
+                            ? 'bg-sky-600 text-white' 
+                            : 'bg-teal-600 text-white')
                 }">
                     #${rankNum}
                 </div>
                 <div>
-                    <h4 class="text-xs font-bold text-white truncate max-w-[150px]">${item.scoreResult.streetName}</h4>
-                    <p class="text-[11px] text-slate-400">${item.walkMinutes} dk yürüme (${Math.round(item.distanceToTarget)}m)</p>
+                    <h4 class="text-xs font-bold text-[#FFF1FB] truncate max-w-[155px] tracking-tight">${item.scoreResult.streetName}</h4>
+                    <p class="text-[11px] text-[#FFF1FB]/60 font-medium">${item.walkMinutes} dk yürüme (${Math.round(item.distanceToTarget)}m)</p>
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-xs font-bold px-2.5 py-1 rounded-full text-white ${
-                    rankNum === 1 ? 'bg-emerald-600' : 'bg-slate-700'
+                <span class="text-xs font-extrabold px-2.5 py-1 rounded-full text-white shadow-sm border border-white/15 ${
+                    rankNum === 1 
+                        ? 'bg-emerald-600/90' 
+                        : 'bg-[#1A1033]/80'
                 }">
                     %${item.scoreResult.score}
                 </span>
@@ -834,23 +834,24 @@ function refreshSelectedStreetDetail() {
     document.getElementById('modal-walk-info').innerText = `${Math.round(selectedStreetData.distanceToTarget)} metre (yaklaşık ${selectedStreetData.walkMinutes} dk yürüme)`;
 
     const scoreBadge = document.getElementById('modal-score-badge');
-    scoreBadge.innerText = `${scoreResult.score} / 100`;
+    scoreBadge.innerText = `%${scoreResult.score}`;
     scoreBadge.style.backgroundColor = scoreResult.color;
+    scoreBadge.style.color = '#ffffff';
 
     const breakdownList = document.getElementById('modal-factors-list');
     breakdownList.innerHTML = '';
 
     scoreResult.breakdown.forEach(item => {
         const li = document.createElement('li');
-        li.className = 'flex items-center justify-between text-xs py-1 border-b border-slate-700/50';
+        li.className = 'flex items-center justify-between text-xs py-1.5 border-b border-white/10';
         
-        let valColor = 'text-slate-300';
-        if (item.type === 'positive') valColor = 'text-emerald-400 font-bold';
-        if (item.type === 'negative') valColor = 'text-rose-400 font-bold';
-        if (item.type === 'warning') valColor = 'text-amber-400 font-bold';
+        let valColor = 'text-[#FFF1FB]/80';
+        if (item.type === 'positive') valColor = 'text-[#4BE3FF] font-bold';
+        if (item.type === 'negative') valColor = 'text-[#FF4FD8] font-bold';
+        if (item.type === 'warning') valColor = 'text-[#B45CFF] font-bold';
 
         li.innerHTML = `
-            <span class="text-slate-300">${item.label}</span>
+            <span class="text-[#FFF1FB]/70">${item.label}</span>
             <span class="${valColor}">${item.value}</span>
         `;
         breakdownList.appendChild(li);
@@ -864,13 +865,13 @@ function refreshSelectedStreetDetail() {
     if (currentReport) {
         clearBtn.classList.remove('hidden');
         if (currentReport.type === 'duba_yasak') {
-            reportStatusDiv.innerHTML = '<span class="text-rose-400 text-xs font-semibold">⚠️ Duba / park yasağı bildirimi kayıtlı.</span>';
+            reportStatusDiv.innerHTML = '<span class="text-[#FF4FD8] text-xs font-semibold">⚠️ Duba / park yasağı bildirimi kayıtlı.</span>';
         } else if (currentReport.type === 'kolay_park') {
-            reportStatusDiv.innerHTML = '<span class="text-emerald-400 text-xs font-semibold">⭐ Rahat park edildiği onaylandı.</span>';
+            reportStatusDiv.innerHTML = '<span class="text-[#4BE3FF] text-xs font-semibold">⭐ Rahat park edildiği onaylandı.</span>';
         }
     } else {
         clearBtn.classList.add('hidden');
-        reportStatusDiv.innerHTML = '<span class="text-slate-400 text-xs">Henüz bir bildirim yok.</span>';
+        reportStatusDiv.innerHTML = '<span class="text-[#FFF1FB]/50 text-xs">Henüz bir bildirim yok.</span>';
     }
 }
 

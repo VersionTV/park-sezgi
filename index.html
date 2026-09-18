@@ -13,26 +13,34 @@
     <!-- Custom Style -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-900 text-slate-100 flex flex-col md:flex-row h-screen w-screen overflow-hidden">
+<body class="bg-[#1A1033] text-[#FFF1FB] h-screen w-screen overflow-hidden relative">
 
-    <!-- Sol Kontrol & Öneri Paneli (Sidebar) -->
-    <aside class="w-full md:w-96 lg:w-[420px] h-[50vh] md:h-full flex flex-col z-20 glass-panel border-r border-slate-800 shrink-0">
+    <!-- Harita Katmanı (Tüm Görünüm Alanı) -->
+    <div id="map"></div>
+
+    <!-- Apple Spatial Floating Island (Sol Kontrol & Öneri Paneli) -->
+    <aside class="w-full h-[52vh] md:h-auto md:max-h-[calc(100vh-2.5rem)] md:w-[400px] lg:w-[420px] fixed bottom-0 left-0 right-0 md:bottom-auto md:right-auto md:top-5 md:left-5 z-30 liquid-glass-panel md:rounded-[28px] rounded-t-[28px] flex flex-col pointer-events-auto transition-all duration-300">
         
+        <!-- Mobil Sheet Tutamaç -->
+        <div class="md:hidden pt-2.5 pb-1">
+            <div class="sheet-grab-handle"></div>
+        </div>
+
         <!-- Header -->
-        <div class="p-4 border-b border-slate-800/80 flex items-center justify-between">
-            <div class="flex items-center space-x-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="px-5 py-3.5 border-b border-white/10 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-[14px] bg-gradient-to-tr from-[#FF4FD8] via-[#B45CFF] to-[#4BE3FF] flex items-center justify-center text-white shadow-lg shadow-[#B45CFF]/30 border border-[#FFF1FB]/20">
+                    <svg class="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+                    <h1 class="text-base font-bold text-[#FFF1FB] tracking-tight flex items-center gap-2">
                         ParkSezgi
-                        <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">Pilot</span>
+                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#B45CFF]/15 text-[#4BE3FF] border border-[#4BE3FF]/30 tracking-wider">Pilot</span>
                     </h1>
-                    <p class="text-[11px] text-slate-400">Beylikdüzü & Büyükçekmece</p>
+                    <p class="text-[11px] text-[#FFF1FB]/60 font-medium">Beylikdüzü & Büyükçekmece</p>
                 </div>
             </div>
 
@@ -41,93 +49,100 @@
         </div>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
 
-            <!-- Arama Çubuğu (Gelişmiş & Sabit Dropdown) -->
+            <!-- Apple Spotlight Arama Çubuğu -->
             <div class="relative z-40">
-                <div class="flex items-center bg-slate-800 rounded-xl border border-slate-700 focus-within:border-sky-400 focus-within:ring-1 focus-within:ring-sky-400 transition px-3 py-2.5 shadow-md">
-                    <svg class="w-4 h-4 text-slate-400 shrink-0 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                <div class="spotlight-input-container px-3.5 py-2.5 flex items-center">
+                    <svg class="w-4 h-4 text-[#4BE3FF] shrink-0 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <input id="search-input" type="text" placeholder="Mekan veya cadde ara (örn: Kordonboyu, Yaşam Vadisi, Migros)..." 
-                           class="bg-transparent text-xs text-white placeholder-slate-400 outline-none w-full" autocomplete="off">
-                    <button id="search-clear-btn" class="text-slate-400 hover:text-white hidden text-xs px-1">✕</button>
+                    <input id="search-input" type="text" placeholder="Cadde veya mekan ara (örn: Kordonboyu, Marina)..." 
+                           class="bg-transparent text-xs text-[#FFF1FB] placeholder-[#FFF1FB]/40 outline-none w-full font-medium" autocomplete="off">
+                    <button id="search-clear-btn" class="text-[#FFF1FB]/50 hover:text-[#FFF1FB] hidden text-xs px-1.5 py-0.5 rounded-full hover:bg-white/10 transition">✕</button>
                 </div>
 
                 <!-- Arama Sonuçları Dropdown -->
-                <div id="search-results" class="absolute left-0 right-0 top-full mt-1.5 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto hidden z-50 divide-y divide-slate-800">
+                <div id="search-results" class="absolute left-0 right-0 top-full mt-2 bg-[#1A1033]/95 border border-[#B45CFF]/30 rounded-2xl shadow-2xl max-h-60 overflow-y-auto hidden z-50 divide-y divide-white/5">
                 </div>
             </div>
 
-            <!-- Aktif Hedef Kutusu -->
-            <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/70">
-                <div class="flex items-center justify-between mb-1">
-                    <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Gidilecek Hedef Nokta</div>
-                    <span id="offline-mode-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 items-center gap-1">⚡ Çevrimdışı Paket</span>
+            <!-- Aktif Hedef Kutusu (Liquid Card) -->
+            <div class="liquid-glass-card p-3.5 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10.5px] font-semibold text-[#FFF1FB]/60 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#4BE3FF] shadow-[0_0_8px_#4BE3FF]"></span>
+                        Hedef Konum
+                    </div>
+                    <span id="offline-mode-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF4FD8]/20 text-[#FF4FD8] border border-[#FF4FD8]/40 items-center gap-1">⚡ Çevrimdışı Paket</span>
                 </div>
-                <div id="target-name-display" class="text-sm font-bold text-sky-300 truncate">Büyükçekmece Kordonboyu</div>
-                <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>Haritada herhangi bir yere tıklayarak da hedefi değiştirebilirsiniz.</span>
+                <div id="target-name-display" class="text-sm font-bold text-[#4BE3FF] truncate tracking-tight">Büyükçekmece Kordonboyu</div>
+                <div class="text-[11px] text-[#FFF1FB]/60 flex items-center gap-1.5 pt-0.5">
+                    <svg class="w-3.5 h-3.5 text-[#4BE3FF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Haritada tıklayarak hedefi serbestçe değiştirebilirsiniz.</span>
                 </div>
             </div>
 
-            <!-- Hızlı Pilot Konumlar -->
+            <!-- Hızlı Pilot Konumlar (Liquid Pills) -->
             <div>
-                <label class="text-xs font-medium text-slate-300 mb-1.5 block">Hızlı Pilot Noktalar</label>
+                <label class="text-[11px] font-semibold text-[#FFF1FB]/80 uppercase tracking-wider mb-2 block">Hızlı Pilot Noktalar</label>
                 <div class="grid grid-cols-2 gap-1.5">
-                    <button data-preset="bcekmece_kordon" class="p-2 text-left rounded-lg bg-sky-600 text-white text-xs font-medium hover:opacity-90 transition truncate border border-sky-500/40">
-                        🏖️ B.Çekmece Kordon
+                    <button data-preset="bcekmece_kordon" class="liquid-pill-btn active p-2 text-left truncate flex items-center gap-1.5">
+                        <span>🏖️</span>
+                        <span class="truncate">B.Çekmece Kordon</span>
                     </button>
-                    <button data-preset="bcekmece_marina" class="p-2 text-left rounded-lg bg-slate-800/90 text-slate-300 text-xs font-medium hover:bg-slate-750 transition truncate border border-slate-700">
-                        ⚓ Kıyı İst. Marina
+                    <button data-preset="bcekmece_marina" class="liquid-pill-btn p-2 text-left truncate flex items-center gap-1.5">
+                        <span>⚓</span>
+                        <span class="truncate">Kıyı İst. Marina</span>
                     </button>
-                    <button data-preset="beylikduzu_kameroglu" class="p-2 text-left rounded-lg bg-slate-800/90 text-slate-300 text-xs font-medium hover:bg-slate-750 transition truncate border border-slate-700">
-                        ☕ Kameroğlu Çarşı
+                    <button data-preset="beylikduzu_kameroglu" class="liquid-pill-btn p-2 text-left truncate flex items-center gap-1.5">
+                        <span>☕</span>
+                        <span class="truncate">Kameroğlu Çarşı</span>
                     </button>
-                    <button data-preset="beylikduzu_yasam_vadisi" class="p-2 text-left rounded-lg bg-slate-800/90 text-slate-300 text-xs font-medium hover:bg-slate-750 transition truncate border border-slate-700">
-                        🌳 Yaşam Vadisi
+                    <button data-preset="beylikduzu_yasam_vadisi" class="liquid-pill-btn p-2 text-left truncate flex items-center gap-1.5">
+                        <span>🌳</span>
+                        <span class="truncate">Yaşam Vadisi</span>
                     </button>
-                    <button data-preset="beylikduzu_bizimkent" class="p-2 text-left rounded-lg bg-slate-800/90 text-slate-300 text-xs font-medium hover:bg-slate-750 transition truncate border border-slate-700">
-                        🏢 Bizimkent Sitesi
+                    <button data-preset="beylikduzu_bizimkent" class="liquid-pill-btn p-2 text-left truncate flex items-center gap-1.5 col-span-2">
+                        <span>🏢</span>
+                        <span class="truncate">Bizimkent Sitesi (Kapalı Bloklar)</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Zaman & Saat Faktörü -->
+            <!-- Zaman & Saat Faktörü (Apple Segmented Control) -->
             <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="text-xs font-medium text-slate-300">Zaman / Saat Bağlamı</label>
-                    <span class="text-[10px] text-sky-400 font-mono">Dinamik İhtimal</span>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-[11px] font-semibold text-[#FFF1FB]/80 uppercase tracking-wider">Zaman / Saat Bağlamı</label>
+                    <span class="text-[10px] text-[#4BE3FF] font-medium">Dinamik İhtimal</span>
                 </div>
                 <div class="grid grid-cols-2 gap-1.5">
-                    <button data-time="weekday_day" class="py-1.5 px-2.5 rounded-lg bg-sky-500 text-white border border-sky-400 text-xs font-medium text-center transition">
+                    <button data-time="weekday_day" class="liquid-pill-btn active py-2 px-2.5 text-center text-xs">
                         ☀️ Hafta İçi Gündüz
                     </button>
-                    <button data-time="weekday_night" class="py-1.5 px-2.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium text-center transition">
+                    <button data-time="weekday_night" class="liquid-pill-btn py-2 px-2.5 text-center text-xs">
                         🌙 Hafta İçi Akşam
                     </button>
-                    <button data-time="weekend" class="py-1.5 px-2.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium text-center transition">
+                    <button data-time="weekend" class="liquid-pill-btn py-2 px-2.5 text-center text-xs">
                         ☕ Hafta Sonu
                     </button>
-                    <button data-time="current" class="py-1.5 px-2.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium text-center transition">
+                    <button data-time="current" class="liquid-pill-btn py-2 px-2.5 text-center text-xs">
                         🕒 Şu Anki Saat
                     </button>
                 </div>
-                <p class="text-[10px] text-slate-400 mt-1">
+                <p class="text-[10px] text-[#FFF1FB]/50 mt-1.5 leading-relaxed">
                     *Konut sokakları gündüz boştur (+bonus), akşam bina sakinleri dönünce dolar (-ceza).
                 </p>
             </div>
 
-            <!-- Yürüme Mesafesi Slider -->
+            <!-- Yürüme Mesafesi Slider (iOS Slider) -->
             <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="text-xs font-medium text-slate-300">Maksimum Yürüme Mesafesi</label>
-                    <span id="radius-value" class="text-xs font-bold text-sky-400">500m (~6 dk yürüme)</span>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-[11px] font-semibold text-[#FFF1FB]/80 uppercase tracking-wider">Maksimum Yürüme Mesafesi</label>
+                    <span id="radius-value" class="text-xs font-bold text-[#4BE3FF] px-2 py-0.5 rounded-full bg-[#B45CFF]/15 border border-[#4BE3FF]/30">500m (~6 dk)</span>
                 </div>
-                <input id="radius-slider" type="range" min="300" max="800" step="50" value="500" 
-                       class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-400">
-                <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                <input id="radius-slider" type="range" min="300" max="800" step="50" value="500" class="liquid-slider">
+                <div class="flex justify-between text-[10px] text-[#FFF1FB]/50 mt-1.5 font-medium">
                     <span>300m (~4 dk)</span>
                     <span>500m (~6 dk)</span>
                     <span>800m (~10 dk)</span>
@@ -135,140 +150,223 @@
             </div>
 
             <!-- Önerilen En İyi Sokaklar Listesi -->
-            <div class="pt-2 border-t border-slate-800">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+            <div class="pt-3 border-t border-white/10">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h3 class="text-xs font-bold text-[#FFF1FB] uppercase tracking-wider flex items-center gap-2">
                         <span>Haritada İşaretli Öneriler</span>
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse"></span>
                     </h3>
-                    <span id="scanned-streets-count" class="text-[11px] text-slate-400">Analiz ediliyor...</span>
+                    <span id="scanned-streets-count" class="text-[11px] text-[#FFF1FB]/60 font-medium">Analiz ediliyor...</span>
                 </div>
                 <div id="recommendations-list" class="space-y-2">
                     <!-- Dinamik JS kartları -->
                 </div>
             </div>
 
+            <!-- Alternatif: Güvenilir Ücretli & Resmi Otoparklar (Placeholder Bölümü) -->
+            <div class="pt-3 border-t border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold text-[#FFF1FB] uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🅿️ Güvenli Ücretli Otoparklar</span>
+                    </h3>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#4BE3FF]/15 text-[#4BE3FF] border border-[#4BE3FF]/30 tracking-wide">
+                        Alternatif • Yakında
+                    </span>
+                </div>
+                <p class="text-[10.5px] text-[#FFF1FB]/60 mb-2.5 leading-relaxed">
+                    Sokakta yer bulamadığınızda veya aracınızı güvenlikli kapalı alana bırakmak istediğinizde resmi ve güvenilir alternatifler:
+                </p>
+
+                <div class="space-y-2">
+                    <!-- Placeholder 1: İSPARK -->
+                    <div class="liquid-glass-card p-2.5 rounded-[16px] border border-white/10 flex items-center justify-between opacity-85 hover:opacity-100 transition cursor-default">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-[#0284c7]/25 border border-[#0284c7]/40 flex items-center justify-center font-black text-[10px] text-[#38bdf8] shrink-0">
+                                İSP
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="text-xs font-semibold text-[#FFF1FB]">İSPARK Katlı / Açık Otoparkı</h4>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 font-medium border border-sky-400/20">Resmi</span>
+                                </div>
+                                <p class="text-[10.5px] text-[#FFF1FB]/50 font-medium">~320m • 4 dk yürüme • 7/24 Kamera</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-[10.5px] text-[#4BE3FF] font-semibold block">Doluluk ~%65</span>
+                            <span class="text-[9.5px] text-[#FFF1FB]/40">Tarifeli</span>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder 2: Belediye Kapalı Otoparkı -->
+                    <div class="liquid-glass-card p-2.5 rounded-[16px] border border-white/10 flex items-center justify-between opacity-85 hover:opacity-100 transition cursor-default">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/25 border border-emerald-500/40 flex items-center justify-center font-black text-[10px] text-emerald-300 shrink-0">
+                                BLD
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="text-xs font-semibold text-[#FFF1FB]">Belediye Kapalı Otoparkı</h4>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-400/20">Kamu</span>
+                                </div>
+                                <p class="text-[10.5px] text-[#FFF1FB]/50 font-medium">~450m • 6 dk yürüme • Bariyerli</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-[10.5px] text-emerald-400 font-semibold block">Açık</span>
+                            <span class="text-[9.5px] text-[#FFF1FB]/40">1 Sa Ücretsiz</span>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder 3: Ruhsatlı Özel Kapalı Otopark -->
+                    <div class="liquid-glass-card p-2.5 rounded-[16px] border border-white/10 flex items-center justify-between opacity-85 hover:opacity-100 transition cursor-default">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-[#B45CFF]/25 border border-[#B45CFF]/40 flex items-center justify-center font-black text-[10px] text-[#B45CFF] shrink-0">
+                                ÖZL
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="text-xs font-semibold text-[#FFF1FB]">Ruhsatlı Özel Kapalı Otopark</h4>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-medium border border-purple-400/20">Özel</span>
+                                </div>
+                                <p class="text-[10.5px] text-[#FFF1FB]/50 font-medium">~520m • 7 dk yürüme • Kapalı / Vale</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-[10.5px] text-[#FFF1FB]/70 font-semibold block">Giriş Serbest</span>
+                            <span class="text-[9.5px] text-[#FFF1FB]/40">Özel Tarife</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2 text-center">
+                    <span class="text-[10px] text-[#FFF1FB]/40 italic">
+                        *İBB Açık Veri Portalı & İSPARK canlı doluluk entegrasyonu sonraki aşamada eklenecektir.
+                    </span>
+                </div>
+            </div>
+
             <!-- Renk Açıklaması (Lejant) -->
-            <div class="p-2.5 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px] space-y-1.5">
-                <div class="font-semibold text-slate-300 text-xs mb-1">Harita Renkleri & Simgeler</div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-5 h-5 rounded-full bg-emerald-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0">#1</div>
-                    <span class="text-slate-300"><strong>#1, #2, #3 Rozetleri:</strong> En yüksek park ihtimalli kamu sokakları</span>
+            <div class="liquid-glass-card p-3 text-[11px] space-y-2">
+                <div class="font-bold text-[#FFF1FB] text-[11.5px] mb-1 flex items-center gap-1.5">
+                    <span>🎨</span>
+                    <span>Harita Renkleri & Simgeler</span>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
-                    <span class="text-slate-300"><strong>Yeşil (%70 - 100):</strong> Sakin konut sokağı, açık ve dükkansız</span>
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm border border-white/20">#1</div>
+                    <span class="text-[#FFF1FB]/90"><strong>#1, #2, #3 Rozetleri:</strong> En yüksek park ihtimalli kamu sokakları</span>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3.5 h-1.5 rounded-full bg-amber-500 shrink-0"></div>
-                    <span class="text-slate-300"><strong>Sarı (%40 - 69):</strong> Orta ihtimal (kısmi dükkan veya akşam saati)</span>
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-3.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_6px_#10b981] shrink-0"></div>
+                    <span class="text-[#FFF1FB]/90"><strong>Yeşil (%70 - 100):</strong> Sakin konut sokağı, açık ve dükkansız</span>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-3.5 h-1.5 rounded-full bg-rose-500 shrink-0"></div>
-                    <span class="text-slate-300"><strong>Kırmızı:</strong> Cadde, Marina, Site İçi Bariyerli veya Dubalı</span>
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-3.5 h-1.5 rounded-full bg-[#f59e0b] shadow-[0_0_6px_#f59e0b] shrink-0"></div>
+                    <span class="text-[#FFF1FB]/90"><strong>Sarı / Kehribar (%40 - 69):</strong> Orta ihtimal (kısmi dükkan veya akşam saati)</span>
+                </div>
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-3.5 h-1.5 rounded-full bg-[#ef4444] shadow-[0_0_6px_#ef4444] shrink-0"></div>
+                    <span class="text-[#FFF1FB]/90"><strong>Kırmızı:</strong> Cadde, Marina, Site İçi Bariyerli veya Dubalı</span>
                 </div>
             </div>
 
         </div>
     </aside>
 
-    <!-- Harita Alanı -->
-    <main class="relative flex-1 h-[50vh] md:h-full w-full">
-        <div id="map"></div>
-
-        <!-- Harita Üzerinde Canlı Tarama Bildirim Rozeti -->
-        <div id="map-radar-indicator" class="absolute top-4 left-1/2 -translate-x-1/2 z-30 glass-panel px-4 py-2.5 rounded-2xl flex items-center space-x-3 shadow-2xl border border-sky-400/50 transition-all duration-300 transform opacity-0 -translate-y-4 pointer-events-none">
-            <div class="relative flex items-center justify-center">
-                <div class="w-4 h-4 rounded-full bg-sky-400/30 animate-ping absolute"></div>
-                <div class="w-2.5 h-2.5 rounded-full bg-sky-400"></div>
-            </div>
-            <div class="text-left">
-                <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Sokaklar Taranıyor</span>
-                    <span class="inline-flex space-x-0.5">
-                        <span class="w-1 h-1 bg-sky-400 rounded-full animate-bounce"></span>
-                        <span class="w-1 h-1 bg-sky-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                        <span class="w-1 h-1 bg-sky-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                    </span>
-                </div>
-                <div class="text-[10px] text-sky-300/80">Yürüyüş mesafesi & esnaf yoğunluğu hesaplanıyor</div>
-            </div>
+    <!-- Harita Üzerinde Canlı Tarama Bildirim Rozeti (Apple Dynamic Island) -->
+    <div id="map-radar-indicator" class="dynamic-island-badge absolute top-5 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 flex items-center space-x-3.5 transition-all duration-400 transform opacity-0 -translate-y-5 pointer-events-none">
+        <div class="relative flex items-center justify-center">
+            <div class="w-4 h-4 rounded-full bg-[#4BE3FF]/40 animate-ping absolute"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-[#4BE3FF] shadow-[0_0_10px_#4BE3FF]"></div>
         </div>
-
-        <!-- Harita Katman & Renk Paleti Seçici -->
-        <div class="map-layer-selector">
-            <div class="flex items-center bg-slate-900/90 backdrop-blur-md rounded-xl p-1 border border-slate-700 shadow-xl">
-                <span class="text-[11px] font-medium text-slate-400 px-2 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                    Harita:
+        <div class="text-left">
+            <div class="text-xs font-bold text-[#FFF1FB] flex items-center gap-1.5">
+                <span>Sokaklar Taranıyor</span>
+                <span class="inline-flex space-x-0.5">
+                    <span class="w-1 h-1 bg-[#4BE3FF] rounded-full animate-bounce"></span>
+                    <span class="w-1 h-1 bg-[#4BE3FF] rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1 h-1 bg-[#4BE3FF] rounded-full animate-bounce [animation-delay:0.4s]"></span>
                 </span>
-                <select id="tile-layer-select" class="bg-slate-800 text-xs text-white rounded-lg px-2.5 py-1.5 border border-slate-600 outline-none cursor-pointer hover:bg-slate-750">
-                    <option value="minimal_gray" selected>🎨 Minimal Açık Gri (Esri Canvas)</option>
-                    <option value="dark_clean">🌙 Koyu Tema (Esri Dark Slate)</option>
-                    <option value="street_detailed">🗺️ Renkli Sokak Haritası (Esri Street)</option>
-                    <option value="satellite">🛰️ Uydu Görünümü (Esri Imagery)</option>
-                    <option value="osm_standard">📍 Standart Klasik OSM</option>
-                </select>
             </div>
+            <div class="text-[10px] text-[#4BE3FF]/80 font-medium">Yürüyüş mesafesi & esnaf yoğunluğu hesaplanıyor</div>
         </div>
+    </div>
 
-        <!-- Sokak Detay ve İstisna/Raporlama Modalı (Bottom Sheet) -->
-        <div id="detail-modal" 
-             class="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-30 glass-panel rounded-2xl p-4 shadow-2xl border border-slate-700/80 transition-all duration-300 transform translate-y-full opacity-0 pointer-events-none">
-            
-            <div class="flex items-start justify-between pb-2 border-b border-slate-800">
-                <div>
-                    <span id="modal-highway-type" class="text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded-md border border-sky-800/60">
-                        RESIDENTIAL
-                    </span>
-                    <h3 id="modal-street-name" class="text-sm font-bold text-white mt-1">Sokak Adı</h3>
-                    <p id="modal-walk-info" class="text-xs text-slate-400">420m (5 dk yürüme)</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span id="modal-score-badge" class="px-2.5 py-1 rounded-full text-xs font-black text-white bg-emerald-600 shadow-md">
-                        %85
-                    </span>
-                    <button id="close-modal-btn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
+    <!-- VisionOS Harita Katman & Renk Paleti Seçici -->
+    <div class="map-layer-selector">
+        <div class="flex items-center bg-[#1A1033]/85 backdrop-blur-2xl rounded-2xl p-1 border border-[#B45CFF]/30 shadow-2xl">
+            <span class="text-[11px] font-semibold text-[#FFF1FB] px-2.5 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-[#4BE3FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                Harita:
+            </span>
+            <select id="tile-layer-select" class="bg-[#26184A]/90 text-xs text-[#FFF1FB] rounded-xl px-3 py-1.5 border border-[#B45CFF]/30 outline-none cursor-pointer hover:border-[#4BE3FF]/50 font-medium">
+                <option value="minimal_gray" selected>🎨 Minimal Açık Gri (Esri Canvas)</option>
+                <option value="dark_clean">🌙 Koyu Tema (Esri Dark Slate)</option>
+                <option value="street_detailed">🗺️ Renkli Sokak Haritası (Esri Street)</option>
+                <option value="satellite">🛰️ Uydu Görünümü (Esri Imagery)</option>
+                <option value="osm_standard">📍 Standart Klasik OSM</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Sokak Detay ve İstisna/Raporlama Modalı (Apple Bottom Sheet) -->
+    <div id="detail-modal" 
+         class="fixed bottom-4 left-4 right-4 md:left-auto md:right-5 md:w-[390px] z-40 liquid-glass-panel rounded-[26px] p-5 shadow-2xl transition-all duration-350 transform translate-y-full opacity-0 pointer-events-none">
+        
+        <!-- Sheet Tutamaç -->
+        <div class="sheet-grab-handle"></div>
+
+        <div class="flex items-start justify-between pb-3 border-b border-white/10">
+            <div>
+                <span id="modal-highway-type" class="text-[10px] font-bold uppercase tracking-wider text-[#4BE3FF] bg-[#B45CFF]/20 px-2.5 py-0.5 rounded-full border border-[#4BE3FF]/40">
+                    RESIDENTIAL
+                </span>
+                <h3 id="modal-street-name" class="text-sm font-bold text-[#FFF1FB] mt-1.5 tracking-tight">Sokak Adı</h3>
+                <p id="modal-walk-info" class="text-xs text-[#FFF1FB]/60 font-medium">420m (5 dk yürüme)</p>
             </div>
-
-            <!-- Puan Faktörleri -->
-            <div class="py-2.5">
-                <div class="text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Skor Hesabı Faktörleri:</div>
-                <ul id="modal-factors-list" class="space-y-1">
-                    <!-- Dinamik JS faktörleri -->
-                </ul>
-            </div>
-
-            <!-- Topluluk Geri Bildirim & İstisna Ekleme (Crowdsourcing) -->
-            <div class="pt-2 border-t border-slate-800">
-                <div class="text-[11px] font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-                    <span>Topluluk & İstisna Bildirimi</span>
-                    <div id="modal-report-status"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mt-1">
-                    <button id="btn-report-duba" class="p-2 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-xs font-medium border border-rose-700/60 transition flex items-center justify-center gap-1.5">
-                        <span>⚠️ Duba / Yasak Var</span>
-                    </button>
-                    <button id="btn-report-parked" class="p-2 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 text-xs font-medium border border-emerald-700/60 transition flex items-center justify-center gap-1.5">
-                        <span>⭐ Rahat Park Ettim</span>
-                    </button>
-                </div>
-                <button id="btn-report-clear" class="w-full mt-1.5 py-1 text-[11px] text-slate-400 hover:text-slate-200 transition hidden text-center">
-                    ↺ Benim Bildirimimi Temizle
+            <div class="flex items-center space-x-2.5">
+                <span id="modal-score-badge" class="px-3 py-1 rounded-full text-xs font-black text-white bg-emerald-600 shadow-md border border-white/20">
+                    %85
+                </span>
+                <button id="close-modal-btn" class="text-[#FFF1FB]/60 hover:text-[#FFF1FB] p-1.5 rounded-full hover:bg-white/10 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-
         </div>
 
-        <!-- Toast Bildirim -->
-        <div id="toast" class="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-slate-800/95 border border-slate-700 text-white text-xs px-4 py-2 rounded-xl shadow-2xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none flex items-center gap-2">
-            Bildirim mesajı
+        <!-- Puan Faktörleri -->
+        <div class="py-3">
+            <div class="text-[11px] font-bold text-[#FFF1FB]/80 mb-2 uppercase tracking-wider">Skor Hesabı Faktörleri:</div>
+            <ul id="modal-factors-list" class="space-y-1.5 text-xs">
+                <!-- Dinamik JS faktörleri -->
+            </ul>
         </div>
 
-    </main>
+        <!-- Topluluk Geri Bildirim & İstisna Ekleme (Crowdsourcing) -->
+        <div class="pt-3 border-t border-white/10">
+            <div class="text-[11px] font-semibold text-[#FFF1FB]/80 mb-2 flex items-center justify-between">
+                <span>Topluluk & İstisna Bildirimi</span>
+                <div id="modal-report-status"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-1">
+                <button id="btn-report-duba" class="liquid-pill-btn p-2.5 bg-[#FF4FD8]/15 hover:bg-[#FF4FD8]/25 text-[#FF4FD8] text-xs font-semibold border border-[#FF4FD8]/40 flex items-center justify-center gap-1.5">
+                    <span>⚠️ Duba / Yasak</span>
+                </button>
+                <button id="btn-report-parked" class="liquid-pill-btn p-2.5 bg-[#4BE3FF]/15 hover:bg-[#4BE3FF]/25 text-[#4BE3FF] text-xs font-semibold border border-[#4BE3FF]/40 flex items-center justify-center gap-1.5">
+                    <span>⭐ Rahat Park Ettim</span>
+                </button>
+            </div>
+            <button id="btn-report-clear" class="w-full mt-2 py-1 text-[11px] text-[#FFF1FB]/60 hover:text-[#FFF1FB] transition hidden text-center">
+                ↺ Benim Bildirimimi Temizle
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Apple Toast Bildirim (Pill) -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 dynamic-island-badge text-[#FFF1FB] text-xs px-5 py-2.5 shadow-2xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none flex items-center gap-2.5 font-medium">
+        Bildirim mesajı
+    </div>
 
     <!-- Uygulama Scriptleri -->
     <script src="scoring.js"></script>
