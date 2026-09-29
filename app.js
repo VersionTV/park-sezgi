@@ -20,7 +20,7 @@ let currentTarget = {
 };
 
 let currentRadius = 500;
-let currentTimeMode = 'weekday_day';
+let currentTimeMode = 'current';
 let currentLoadedWays = [];
 let currentLoadedPOIs = [];
 let localCommercialPOIs = [];
