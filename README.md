@@ -160,5 +160,15 @@ Manual deployment can also be performed via PowerShell:
 
 ---
 
+## 🏛️ Architecture Decision Records (ADRs)
+
+Key architectural trade-offs, evaluated options, and design decisions are formally documented in the [`docs/adr/`](docs/adr/) directory:
+
+- [**ADR-0001: In-Memory $O(1)$ Spatial Hash Grid Indexing for 100K+ POIs**](docs/adr/0001-in-memory-spatial-hash-grid.md) — Explains why a native JS Map-based spatial hash grid was chosen over client-side R-trees or server-side PostGIS, achieving 17ms index time and sub-6ms localized queries.
+- [**ADR-0002: Hybrid Crowdsource Storage Architecture: DynamoDB Atomic Writes with S3 Static CDN Reads**](docs/adr/0002-hybrid-storage-architecture-for-ratings.md) — Explains the CQRS-style decoupling of atomic write paths (DynamoDB) from high-frequency read paths (S3 + CloudFront CDN), eliminating read costs ($0/mo) and ensuring sub-30ms global edge latency.
+- [**ADR-0003: Adoption of Overture Maps Foundation & OSM Over Commercial APIs**](docs/adr/0003-overture-maps-and-osm-over-commercial-mapping-apis.md) — Explains the dual-source open geospatial strategy for harvesting 100,542 verified Istanbul commercial venues without recurring Google Places API billing.
+
+---
+
 ## 📄 License
 This project is licensed under the [MIT License](LICENSE).
