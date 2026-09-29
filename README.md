@@ -1,4 +1,4 @@
-# 🚗 ParkSezgi — Cloud-Native Free Street Parking Recommender
+# 🚗 ParkSezgi — Smart Free Street Parking Finder
 
 [![CI - Test & Quality Checks](https://github.com/VersionTV/park-sezgi/actions/workflows/ci.yml/badge.svg)](https://github.com/VersionTV/park-sezgi/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -6,11 +6,31 @@
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?logo=terraform)](https://www.terraform.io)
 [![Leaflet](https://img.shields.io/badge/Maps-Leaflet-199900?logo=leaflet)](https://leafletjs.com)
 
-> **Live Production Demo:** **[https://d1msnatkb8tlnq.cloudfront.net](https://d1msnatkb8tlnq.cloudfront.net)**
+> 🌐 **Live Demo:** **[https://d1msnatkb8tlnq.cloudfront.net](https://d1msnatkb8tlnq.cloudfront.net)**
 
-ParkSezgi is an intelligent, privacy-first geospatial decision system designed to predict and recommend legal, free street parking spots within a 5–8 minute walking radius of high-density urban destinations.
+<p align="center">
+  <img src="docs/assets/app_preview.png" alt="ParkSezgi Application Screenshot" width="850" style="border-radius: 10px;">
+</p>
 
-Built with a **Cloud-Native Serverless Architecture** orchestrated via **Terraform (IaC)**, it processes over **100,000+ commercial venues** in real-time with an in-memory $O(1)$ spatial hash grid and incorporates a community review engine with anti-manipulation safeguards running at **$0 monthly operating cost** within AWS Free Tier limits.
+## 📌 About the Project
+
+Hi! I am a recent Computer Engineering graduate. I built **ParkSezgi** both to solve a real-world everyday problem—finding free, legal street parking near crowded spots without circling for hours—and to get practical, hands-on experience with **AWS Cloud, Infrastructure as Code (Terraform), and CI/CD pipelines**.
+
+Instead of building another generic CRUD app, I wanted to build an end-to-end system that handles map data, spatial indexing, a scoring algorithm, and a serverless backend running within the **AWS Free Tier ($0/month)**.
+
+---
+
+## 💡 How It Works
+
+When you select a destination on the map, ParkSezgi analyzes all streets within a 5–8 minute walking distance (300m–800m):
+
+1. **Street Type Baseline:** Residential streets (`residential`, `living_street`) start with higher scores. Main avenues (`primary`, `secondary`) are penalized or marked red because parking there is usually prohibited or blocked.
+2. **Commercial Density Penalty:** Uses a dataset of **100,000+ local venues** (cafes, markets, restaurants) harvested from Overture Maps. Streets with heavy shopfronts get points deducted due to customer traffic and illegal shopkeeper bollards.
+3. **Time of Day Context:** 
+   - ☀️ **Daytime:** Residential streets get a bonus (+15) because residents are away at work.
+   - 🌙 **Evening:** Residential streets get penalized (-20) as residents return home.
+   - 🕒 **"Current Time" mode:** Automatically checks the device clock and day of the week.
+4. **Community Rating (Crowdsourcing):** Users can log in with Google to rate streets (1–5 stars) or leave notes (e.g. *"There are parking pockets on the right"*).
 
 ---
 
@@ -18,157 +38,102 @@ Built with a **Cloud-Native Serverless Architecture** orchestrated via **Terrafo
 
 ```mermaid
 flowchart TD
-    subgraph Client["📱 Client Application (PWA / Responsive)"]
-        UI["Liquid Glass UI (Leaflet.js + Tailwind)"]
-        Grid["Spatial Hash Grid (100K+ POIs O(1))"]
-        Engine["Multi-Factor Heuristic Scoring Engine"]
+    subgraph Client["📱 Frontend (Vanilla JS + Leaflet)"]
+        UI["Interactive Map UI"]
+        Grid["Spatial Hash Grid (Fast POI Lookup)"]
+        Engine["Scoring Engine (scoring.js)"]
     end
 
-    subgraph CDN["🌍 Edge & Storage Layer"]
-        CF["CloudFront CDN Distribution (HTTPS, OAC)"]
-        S3Static["S3: Static Assets Bucket"]
-        S3Data["S3: Cached ratings_aggregate.json"]
+    subgraph AWS["☁️ AWS Cloud (Provisioned with Terraform)"]
+        CF["CloudFront CDN (HTTPS & Fast Caching)"]
+        S3Site["S3: Static Website Files"]
+        S3Data["S3: ratings_aggregate.json"]
+        Cognito["AWS Cognito (Google Login)"]
+        APIGW["API Gateway (REST API)"]
+        Lambda["AWS Lambda (Node.js 20)"]
+        DDB[("DynamoDB (Ratings Table)")]
     end
 
-    subgraph Auth["🔐 Identity Layer"]
-        Cognito["AWS Cognito User Pool"]
-        Google["Google OAuth 2.0 Identity Provider"]
-    end
+    UI -->|1. Load Web Page| CF
+    CF --> S3Site
+    CF --> S3Data
 
-    subgraph Compute["⚡ Serverless Backend"]
-        APIGW["Amazon API Gateway (REST + CORS)"]
-        AuthZ["Cognito Authorizer (JWT)"]
-        Lambda["AWS Lambda Function (Node.js 20 ESM)"]
-        DDB[("Amazon DynamoDB (PAY_PER_REQUEST)")]
-    end
-
-    %% Read Flow
-    UI -->|1. Fetch Web Bundle & Cache| CF
-    CF -->|Origin 1| S3Static
-    CF -->|Origin 2: High Speed Read| S3Data
-
-    %% Auth Flow
-    UI -->|2. One-Click Sign In| Cognito
-    Cognito <-->|OAuth Exchange| Google
-
-    %% Write Flow
-    UI -->|3. Submit Rating with Bearer JWT| APIGW
-    APIGW -->|Verify Token| AuthZ
-    APIGW -->|Proxy Event| Lambda
-    Lambda -->|4. Upsert Vote| DDB
-    Lambda -->|5. Recalculate Median & Update S3| S3Data
+    UI -->|2. Google Login| Cognito
+    UI -->|3. Submit Rating with JWT| APIGW
+    APIGW --> Lambda
+    Lambda -->|4. Save Vote| DDB
+    Lambda -->|5. Update Aggregate File| S3Data
 ```
 
 ---
 
-## ⚡ Key Engineering Highlights
+## ☁️ Cloud & DevOps Highlights (What I Built & Learned)
 
-### 1. $O(1)$ Spatial Hash Grid Indexing
-- Rather than running costly geometric scans across 100,000+ POIs on every frame, coordinates are hashed into discrete geographic bounding buckets:
+### 1. Infrastructure as Code (Terraform)
+All AWS resources are defined in code in the [`infra/`](infra/) directory. Instead of manually clicking in the AWS Console, I can set up or tear down the entire environment with Terraform:
+- **Modular files:** `main.tf`, `dynamodb.tf`, `cognito.tf`, `lambda.tf`, `api_gateway.tf`, `s3_cloudfront.tf`.
+- **Security:** Sensitive variables (like Google OAuth secrets) are marked `sensitive = true`, and Terraform state files (`.tfstate`) are excluded from Git.
+
+### 2. Serverless Backend & Cost Optimization ($0/month)
+As a student/new graduate, I wanted zero monthly server bills. I designed the architecture to stay strictly within the **AWS Free Tier**:
+- **DynamoDB On-Demand (`PAY_PER_REQUEST`):** No fixed monthly hourly fee. Only pays per read/write, well within the free tier.
+- **S3 + CloudFront CDN Caching:** When hundreds of streets are shown on the map, querying DynamoDB for every street would quickly consume database capacity. Instead, Lambda writes an aggregated summary (`ratings_aggregate.json`) to S3, and clients read it from the CloudFront CDN cache. **Read cost = $0.**
+- **AWS Lambda (Node.js 20 ESM):** Runs only when a user votes or deletes a vote. Takes ~35ms to execute.
+
+### 3. Authentication with AWS Cognito & Google
+- Users can browse the map anonymously.
+- Voting requires signing in with **Google** via **AWS Cognito User Pools** (OAuth 2.0).
+- API Gateway uses a **Cognito Authorizer** to verify the user's JWT token before allowing requests through to Lambda.
+
+### 4. CI/CD with GitHub Actions
+I set up two automated workflows in [`.github/workflows/`](.github/workflows/):
+- **CI Pipeline (`ci.yml`):** Runs on every push and pull request. It checks JavaScript syntax, runs the unit test suite (`test_scoring.js`), and validates Terraform formatting (`terraform fmt -check`, `terraform validate`).
+- **CD Pipeline (`deploy.yml`):** When code is pushed to the `master` branch, it automatically zips and updates the Lambda function, uploads the frontend files to S3, and invalidates the CloudFront cache.
+
+---
+
+## 🧠 Algorithmic Problem Solved: In-Memory Spatial Indexing
+
+**The Challenge:** Calculating distances between ~200 visible streets and 100,000+ venue coordinates on every map movement caused noticeable frame lag in the browser ($200 \times 100{,}000 = 20{,}000{,}000$ operations).
+
+**My Solution:** I implemented an **$O(1)$ Spatial Hash Grid** in vanilla JavaScript:
+- The coordinate plane is divided into grid cells by rounding:
   $$\text{Key} = \lfloor \text{lat} \times 100 \rfloor \text{ \_ } \lfloor \text{lon} \times 100 \rfloor$$
-- **Benchmark:** Indexes 100,542 venues in **17 ms** and queries nearby commercial density across 300+ streets in under **5.7 ms** on the client.
+- When checking a street, the code only inspects venues inside that cell and its 8 neighboring cells.
+- **Result:** Initial index builds in **~17 ms**, and checking 200 streets takes **less than 6 ms** without any external libraries.
 
-### 2. Multi-Factor Street Scoring Engine
-The heuristic engine ([`scoring.js`](file:///C:/Users/versi/.gemini/antigravity/scratch/park-bulucu/scoring.js)) evaluates real-time parking viability using 5 discrete tiers:
-- **Highway Base Priority:** High baseline for residential streets; automatic disqualification for arterial routes.
-- **Commercial Density Penalty:** Commercial venues (cafes, markets, clinics) within 85m penalize availability due to customer vehicle circulation and business bollards.
-- **Diurnal Resident Model:** Dynamic temporal offsets adjust scores based on commute hours (+15 daytime bonus when residents leave, -20 evening penalty when residents return).
-- **Geometric Factors:** One-way streets and dead-end alleys receive flow stability bonuses.
-- **Topological Exclusion:** Automatic detection of private gated communities, ports, and private marina zones.
-
-### 3. $0 Operational Cost Read-Heavy Architecture
-- Harita üzerinde aynı anda 50–100 sokak görüntülenir. Her sokak için veritabanı sorgusu atmak maliyet patlamasına yol açar.
-- **Çözüm:** Oylar Lambda aracılığıyla DynamoDB'ye yazıldığında sokak medyanı ve dağılımı anlık hesaplanıp tek bir statik `ratings_aggregate.json` olarak S3'e yazılır.
-- İstemciler bu dosyayı CloudFront CDN önbelleği üzerinden tek bir HTTP GET ile indirir. **Okuma maliyeti: $0.**
+*(I documented this and other trade-offs in the [`docs/adr/`](docs/adr/) folder).*
 
 ---
 
-## 🛡️ Community Rating & Anti-Abuse Defenses
+## 🛠️ Tech Stack
 
-To complement map data with crowdsourced ground truth (e.g., parking pockets on main avenues, newly placed bollards):
-
-| Defense Layer | Implementation | Purpose |
-|---|---|---|
-| **Layer 1: Identity Bound** | Google OAuth2 via AWS Cognito | Prevents infinite anonymous spam |
-| **Layer 2: Atomic Upsert** | DynamoDB Composite Key (`PK: wayId`, `SK: userId`) | Exactly 1 vote per user per street |
-| **Layer 3: Rate Limiting** | API Gateway Token Bucket (50 req/s, 100 burst) | Bot flood prevention |
-| **Layer 4: Robust Statistics** | Median instead of Mean | Outlier resilience against targeted brigading |
-| **Layer 5: Confidence Threshold** | Minimum 3-vote threshold ($N \ge 3$) | Low-sample noise cancellation |
+- **Cloud (AWS):** S3, CloudFront, API Gateway, Lambda, DynamoDB, Cognito
+- **DevOps & IaC:** Terraform, GitHub Actions, AWS CLI, Git
+- **Frontend:** Vanilla JavaScript (ES6+), Leaflet.js, OpenStreetMap, Tailwind CSS
+- **Data & Tools:** Python (Overture Maps POI harvester script), Node.js
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Running Locally
 
-- **Frontend:** Vanilla JavaScript (ES6+), Leaflet.js, OpenStreetMap, Tailwind CSS, Apple Liquid Glass Design
-- **Data Engineering:** Python (Overture Maps Foundation geo-harvester, DuckDB, Parquet)
-- **Cloud Infrastructure (AWS):**
-  - **IaC:** Terraform v1.5+ (AWS Provider 5.x)
-  - **Compute:** AWS Lambda (Node.js 20.x ESM, AWS SDK v3)
-  - **Database:** Amazon DynamoDB (`PAY_PER_REQUEST`, TTL enabled)
-  - **API:** Amazon API Gateway (REST API + CORS + Cognito Authorizer)
-  - **Auth:** Amazon Cognito User Pool + Google Identity Provider
-  - **Storage & CDN:** Amazon S3 + Amazon CloudFront (Origin Access Control)
-- **CI/CD:** GitHub Actions (Automated unit tests, syntax checks, Terraform validation, zero-downtime deployment)
-
----
-
-## 🚀 Local Development Setup
-
-### Prerequisites
-- Node.js 18+
-- Python 3.10+ (for data harvesting scripts)
-- AWS CLI v2 & Terraform (for infrastructure deployment)
-
-### Running Locally
 ```bash
-# Clone the repository
+# 1. Clone the repo
 git clone https://github.com/VersionTV/park-sezgi.git
 cd park-sezgi
 
-# Start the zero-dependency local Node.js development server
+# 2. Start the local server
 node server.js
 ```
 
-Open your browser at:
-👉 **`http://localhost:5500`**
+Open **`http://localhost:5500`** in your browser.
 
-### Running Test Suite
+### Running the Test Suite
 ```bash
-# Run heuristic algorithm & POI penalty test suite
 node test_scoring.js
 ```
 
 ---
 
-## 📦 Deployment & CI/CD
-
-Deployments are automated via GitHub Actions:
-- **Pull Requests:** Trigger automated unit tests, syntax validation, and `terraform fmt/validate`.
-- **Main Branch Push:** Automatically builds Lambda packages, uploads static assets to S3, and invalidates CloudFront caches.
-
-Manual deployment can also be performed via PowerShell:
-```powershell
-# Deploy frontend changes to S3 & clear CDN cache
-.\deploy.ps1 -Frontend
-
-# Deploy Lambda backend updates
-.\deploy.ps1 -Backend
-
-# Apply full Terraform infrastructure
-.\deploy.ps1 -Apply
-```
-
----
-
-## 🏛️ Architecture Decision Records (ADRs)
-
-Key architectural trade-offs, evaluated options, and design decisions are formally documented in the [`docs/adr/`](docs/adr/) directory:
-
-- [**ADR-0001: In-Memory $O(1)$ Spatial Hash Grid Indexing for 100K+ POIs**](docs/adr/0001-in-memory-spatial-hash-grid.md) — Explains why a native JS Map-based spatial hash grid was chosen over client-side R-trees or server-side PostGIS, achieving 17ms index time and sub-6ms localized queries.
-- [**ADR-0002: Hybrid Crowdsource Storage Architecture: DynamoDB Atomic Writes with S3 Static CDN Reads**](docs/adr/0002-hybrid-storage-architecture-for-ratings.md) — Explains the CQRS-style decoupling of atomic write paths (DynamoDB) from high-frequency read paths (S3 + CloudFront CDN), eliminating read costs ($0/mo) and ensuring sub-30ms global edge latency.
-- [**ADR-0003: Adoption of Overture Maps Foundation & OSM Over Commercial APIs**](docs/adr/0003-overture-maps-and-osm-over-commercial-mapping-apis.md) — Explains the dual-source open geospatial strategy for harvesting 100,542 verified Istanbul commercial venues without recurring Google Places API billing.
-
----
-
 ## 📄 License
-This project is licensed under the [MIT License](LICENSE).
+This project is open source and available under the [MIT License](LICENSE).
