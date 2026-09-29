@@ -1,2 +1,71 @@
-README.node_modules
-.git
+# ==============================================================================
+# ParkSezgi - Professional .gitignore
+# Industry standard ignore rules for Cloud Native / Serverless Architecture
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Terraform & Infrastructure (CRITICAL SECURITY)
+# Never commit tfstate files - they contain sensitive secrets, tokens & ARNs.
+# ------------------------------------------------------------------------------
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Lambda build artifacts (packaged in CI/CD pipeline)
+infra/lambda/*.zip
+*.zip
+
+# ------------------------------------------------------------------------------
+# 2. Secrets & Environment Variables
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.pfx
+
+# ------------------------------------------------------------------------------
+# 3. Node.js & Package Managers
+# ------------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ------------------------------------------------------------------------------
+# 4. Local Development Storage & Logs
+# ------------------------------------------------------------------------------
+data/
+*.log
+scratch/
+ratings_votes.json
+
+# Raw harvest archives (production bundle is commercial_pois_db.json)
+commercial_pois_istanbul_all.json
+
+# ------------------------------------------------------------------------------
+# 5. OS & IDE Specific Files
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

@@ -39,15 +39,21 @@ console.log(`4. Resmi Filiz 2 Sokağı: Skor=${oScore.score}, Renk=${oScore.colo
 console.assert(oScore.score >= 80, "Resmi konut sokağı yeşil olmalı");
 
 // 5. Kameroğlu Metrohome Açık Çarşı / Kafe Bulvarı (Nadir Sokak)
+const { calculateDistanceMeters } = require('./scoring.js');
 const localPOIs = require('./commercial_pois_db.json');
 const kamerogluWay = {
     id: 305,
     tags: { highway: 'residential', name: 'Nadir Sokak' }
 };
-const kScore = calculateStreetScore(kamerogluWay, localPOIs, 'weekday_day', 60, 41.0140, 28.6375);
-console.log(`5. Kameroğlu Nadir Sokak (Gündüz): Skor=${kScore.score}, Kategori=${kScore.category}, Renk=${kScore.color}`);
+// app.js ile aynı mantık: Sokağın orta noktasına 85m yakınlıktaki POI'leri filtrele
+const kamerogluNearbyPOIs = localPOIs.filter(p => {
+    return calculateDistanceMeters(41.0140, 28.6375, p.lat, p.lon) <= 85;
+});
+const kScore = calculateStreetScore(kamerogluWay, kamerogluNearbyPOIs, 'weekday_day', 60, 41.0140, 28.6375);
+console.log(`5. Kameroğlu Nadir Sokak (Gündüz): Skor=${kScore.score}, Kategori=${kScore.category}, Renk=${kScore.color} (Yakındaki İşletme: ${kamerogluNearbyPOIs.length})`);
 console.log(`   Uygulanan Cezalar:`, kScore.breakdown.filter(b => b.type === 'negative').map(b => b.label));
 console.assert(kScore.score < 60, "Kameroğlu sokakları yoğun kafe ve açık çarşı nedeniyle asla yeşil olmamalı (<60 olmalı)");
 console.assert(kScore.color !== '#10b981', "Kameroğlu sokakları yeşil olmamalıdır");
 
 console.log("✅ V3 ve Kameroğlu POI testleri başarıyla geçti!");
+

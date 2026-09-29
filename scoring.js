@@ -155,7 +155,7 @@ function isGatedCommunityOrPrivateRoad(way, lat, lon) {
 /**
  * Bir sokak için puan ve açıklama faktörlerini hesaplar.
  */
-function calculateStreetScore(way, nearbyPOIs = [], timeMode = 'current', distanceMeters = 0, lat = null, lon = null) {
+function calculateStreetScore(way, nearbyPOIs = [], timeMode = 'current', distanceMeters = 0, lat = null, lon = null, communityData = null) {
     const tags = way.tags || {};
     const highway = tags.highway || 'unknown';
     const streetName = tags.name || 'İsimsiz Ara Yol';
@@ -320,9 +320,24 @@ function calculateStreetScore(way, nearbyPOIs = [], timeMode = 'current', distan
         score += 5;
     }
 
-    // 5. ADIM: Kullanıcı Geri Bildirimleri (Crowdsourcing Overrides)
+    // 5. ADIM: Topluluk Değerlendirmesi (Community Ratings)
+    if (communityData && communityData.count >= 3) {
+        // Medyan 3 = nötr, 5 = +40, 1 = -40
+        const communityAdjustment = (communityData.median - 3) * 20;
+        const confidence = Math.min(communityData.count / 20, 1.0);
+        const adjustment = Math.round(communityAdjustment * confidence);
+        score += adjustment;
+        const arrow = adjustment >= 0 ? '+' : '';
+        breakdown.push({
+            label: `👥 Topluluk Değerlendirmesi (${communityData.count} oy, medyan: ${communityData.median.toFixed(1)})`,
+            value: `${arrow}${adjustment}`,
+            type: adjustment >= 0 ? 'positive' : 'negative'
+        });
+    }
+
+    // Eski localStorage fallback (sunucu yokken)
     const reports = getUserReports();
-    if (reports[way.id]) {
+    if (reports[way.id] && (!communityData || communityData.count < 3)) {
         const rep = reports[way.id];
         if (rep.type === 'duba_yasak') {
             score = 10;
@@ -362,12 +377,29 @@ function calculateStreetScore(way, nearbyPOIs = [], timeMode = 'current', distan
     };
 }
 
+function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         calculateStreetScore,
         isMarinaOrPortArea,
         isGatedCommunityOrPrivateRoad,
+        calculateDistanceMeters,
         getUserReports,
         saveUserReport
     };
 }
+

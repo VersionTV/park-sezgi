@@ -596,3 +596,56 @@ input[type=range].liquid-slider::-webkit-slider-thumb:active {
     transform: scale(0.92) !important;
 }
 
+/* ============================================
+   Topluluk Değerlendirme Sistemi (Star Rating)
+   ============================================ */
+
+.star-rating-input .star-btn {
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s ease, transform 0.15s ease;
+    padding: 2px;
+    line-height: 1;
+}
+
+.star-rating-input .star-btn:hover {
+    transform: scale(1.2);
+}
+
+.star-rating-input .star-btn.active {
+    color: #f59e0b !important;
+}
+
+.star-rating-input .star-btn.hover-preview {
+    color: #f59e0b !important;
+    opacity: 0.7;
+}
+
+.star-rating-input .star-btn:active {
+    transform: scale(0.9);
+}
+
+/* Community stars (read-only display) */
+#community-stars-visual .star-filled {
+    color: #f59e0b;
+}
+
+#community-stars-visual .star-half {
+    color: #f59e0b;
+    opacity: 0.5;
+}
+
+#community-stars-visual .star-empty {
+    color: rgba(255, 241, 251, 0.15);
+}
+
+/* Rating textarea focus glow */
+#rating-comment:focus {
+    box-shadow: 0 0 0 2px rgba(75, 227, 255, 0.15);
+}
+
+/* Distribution bars animation */
+#community-distribution [id^="dist-bar-"] {
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}

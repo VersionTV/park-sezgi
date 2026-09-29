@@ -59,8 +59,11 @@
                 </div>
             </div>
 
-            <!-- Yükleniyor Göstergesi -->
-            <div id="loading-spinner" class="spinner hidden" title="Sokaklar analiz ediliyor..."></div>
+            <!-- Sağ Alan: Profil / Giriş & Yükleniyor Göstergesi -->
+            <div class="flex items-center space-x-2">
+                <div id="loading-spinner" class="spinner hidden" title="Sokaklar analiz ediliyor..."></div>
+                <div id="user-profile-header"></div>
+            </div>
         </div>
 
         <!-- Scrollable Content -->
@@ -105,7 +108,7 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-[#4BE3FF] shadow-[0_0_8px_#4BE3FF]"></span>
                         Hedef Konum
                     </div>
-                    <span id="offline-mode-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF4FD8]/20 text-[#FF4FD8] border border-[#FF4FD8]/40 items-center gap-1">⚡ Çevrimdışı Paket</span>
+                    <span id="offline-mode-badge" class="inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 items-center gap-1">🟢 Canlı OSM</span>
                 </div>
                 <div id="target-name-display" class="text-sm font-bold text-[#4BE3FF] truncate tracking-tight">Büyükçekmece Kordonboyu</div>
                 <div class="text-[11px] text-[#FFF1FB]/60 flex items-center gap-1.5 pt-0.5">
@@ -381,23 +384,119 @@
             </ul>
         </div>
 
-        <!-- Topluluk Geri Bildirim & İstisna Ekleme (Crowdsourcing) -->
+        <!-- Topluluk Değerlendirme Sistemi -->
         <div class="pt-3 border-t border-white/10">
-            <div class="text-[11px] font-semibold text-[#FFF1FB]/80 mb-2 flex items-center justify-between">
-                <span>Topluluk & İstisna Bildirimi</span>
-                <div id="modal-report-status"></div>
+            <!-- Topluluk Özeti -->
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-semibold text-[#FFF1FB]/80 uppercase tracking-wider">👥 Topluluk Değerlendirmesi</span>
+                <div id="community-rating-summary" class="text-xs text-[#FFF1FB]/50">Henüz oy yok</div>
             </div>
-            <div class="grid grid-cols-2 gap-2 mt-1">
-                <button id="btn-report-duba" class="liquid-pill-btn p-2.5 bg-[#FF4FD8]/15 hover:bg-[#FF4FD8]/25 text-[#FF4FD8] text-xs font-semibold border border-[#FF4FD8]/40 flex items-center justify-center gap-1.5">
-                    <span>⚠️ Duba / Yasak</span>
-                </button>
-                <button id="btn-report-parked" class="liquid-pill-btn p-2.5 bg-[#4BE3FF]/15 hover:bg-[#4BE3FF]/25 text-[#4BE3FF] text-xs font-semibold border border-[#4BE3FF]/40 flex items-center justify-center gap-1.5">
-                    <span>⭐ Rahat Park Ettim</span>
-                </button>
+            
+            <!-- Topluluk Yıldız Göstergesi -->
+            <div id="community-stars-display" class="flex items-center gap-2 mb-3 hidden">
+                <div class="flex gap-0.5" id="community-stars-visual">
+                    <span class="text-sm text-[#FFF1FB]/20">★</span>
+                    <span class="text-sm text-[#FFF1FB]/20">★</span>
+                    <span class="text-sm text-[#FFF1FB]/20">★</span>
+                    <span class="text-sm text-[#FFF1FB]/20">★</span>
+                    <span class="text-sm text-[#FFF1FB]/20">★</span>
+                </div>
+                <span id="community-median-text" class="text-xs text-[#FFF1FB]/60 font-medium"></span>
             </div>
-            <button id="btn-report-clear" class="w-full mt-2 py-1 text-[11px] text-[#FFF1FB]/60 hover:text-[#FFF1FB] transition hidden text-center">
-                ↺ Benim Bildirimimi Temizle
-            </button>
+
+            <!-- Oy Dağılımı Bar Chart -->
+            <div id="community-distribution" class="mb-3 hidden">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                        <span class="text-[#FFF1FB]/50 w-3 text-right">5</span>
+                        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden"><div id="dist-bar-5" class="h-full rounded-full bg-[#10b981] transition-all" style="width:0%"></div></div>
+                        <span id="dist-count-5" class="text-[#FFF1FB]/40 w-4 text-right">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                        <span class="text-[#FFF1FB]/50 w-3 text-right">4</span>
+                        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden"><div id="dist-bar-4" class="h-full rounded-full bg-[#4BE3FF] transition-all" style="width:0%"></div></div>
+                        <span id="dist-count-4" class="text-[#FFF1FB]/40 w-4 text-right">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                        <span class="text-[#FFF1FB]/50 w-3 text-right">3</span>
+                        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden"><div id="dist-bar-3" class="h-full rounded-full bg-[#f59e0b] transition-all" style="width:0%"></div></div>
+                        <span id="dist-count-3" class="text-[#FFF1FB]/40 w-4 text-right">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                        <span class="text-[#FFF1FB]/50 w-3 text-right">2</span>
+                        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden"><div id="dist-bar-2" class="h-full rounded-full bg-[#FF4FD8] transition-all" style="width:0%"></div></div>
+                        <span id="dist-count-2" class="text-[#FFF1FB]/40 w-4 text-right">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px]">
+                        <span class="text-[#FFF1FB]/50 w-3 text-right">1</span>
+                        <div class="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden"><div id="dist-bar-1" class="h-full rounded-full bg-[#ef4444] transition-all" style="width:0%"></div></div>
+                        <span id="dist-count-1" class="text-[#FFF1FB]/40 w-4 text-right">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kullanıcı Oy Verme Bölümü -->
+            <div class="pt-2 border-t border-white/5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold text-[#FFF1FB]/80">📢 Senin Değerlendirmen</span>
+                    <span id="user-auth-badge" class="text-[10px] text-[#4BE3FF]/70"></span>
+                </div>
+
+                <!-- Giriş Yapılmamışsa Google Giriş Kartı -->
+                <div id="auth-prompt-card" class="mb-3 p-3 rounded-[16px] bg-white/5 border border-white/10 text-center hidden">
+                    <p class="text-xs text-[#FFF1FB]/80 mb-2.5 font-medium">Bu sokağı puanlamak ve topluluğa katkı sunmak için tek tıkla giriş yapın:</p>
+                    <button id="btn-login-google" class="inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-white hover:bg-gray-100 text-gray-800 text-xs font-bold transition shadow-md active:scale-95 cursor-pointer w-full">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        <span>Google ile Giriş Yap</span>
+                    </button>
+                </div>
+
+                <div id="user-rating-section">
+                    <!-- Yıldız Seçici -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="star-rating-input flex gap-1" id="star-rating-input">
+                            <button class="star-btn text-xl text-[#FFF1FB]/20 hover:text-[#f59e0b] transition-colors" data-rating="1" title="İmkansız">★</button>
+                            <button class="star-btn text-xl text-[#FFF1FB]/20 hover:text-[#f59e0b] transition-colors" data-rating="2" title="Zor">★</button>
+                            <button class="star-btn text-xl text-[#FFF1FB]/20 hover:text-[#f59e0b] transition-colors" data-rating="3" title="Orta">★</button>
+                            <button class="star-btn text-xl text-[#FFF1FB]/20 hover:text-[#f59e0b] transition-colors" data-rating="4" title="Kolay">★</button>
+                            <button class="star-btn text-xl text-[#FFF1FB]/20 hover:text-[#f59e0b] transition-colors" data-rating="5" title="Çok Kolay">★</button>
+                        </div>
+                        <span id="star-rating-label" class="text-[10px] text-[#FFF1FB]/40">Tıkla ve değerlendir</span>
+                    </div>
+
+                    <!-- Yorum Alanı (gizli başlar, yıldız seçince açılır) -->
+                    <div id="rating-comment-section" class="hidden">
+                        <textarea id="rating-comment" 
+                            class="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-xs text-[#FFF1FB] placeholder-[#FFF1FB]/30 resize-none focus:outline-none focus:border-[#4BE3FF]/50 transition"
+                            rows="2" 
+                            maxlength="200"
+                            placeholder="Yorum ekle (opsiyonel): ör. 'Cep var, 3 araç sığar'"></textarea>
+                        <div class="flex gap-2 mt-2">
+                            <button id="btn-submit-rating" 
+                                class="flex-1 liquid-pill-btn py-2 bg-[#4BE3FF]/15 hover:bg-[#4BE3FF]/25 text-[#4BE3FF] text-xs font-semibold border border-[#4BE3FF]/40 transition">
+                                Değerlendir
+                            </button>
+                            <button id="btn-delete-rating" 
+                                class="liquid-pill-btn py-2 px-3 bg-[#FF4FD8]/10 hover:bg-[#FF4FD8]/20 text-[#FF4FD8]/60 hover:text-[#FF4FD8] text-xs border border-[#FF4FD8]/20 transition hidden">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mevcut Oy Göstergesi -->
+                    <div id="user-existing-rating" class="hidden mt-1">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-[#FFF1FB]/60">Senin oyun:</span>
+                                <div id="user-rating-stars" class="flex gap-0.5"></div>
+                            </div>
+                            <button id="btn-change-rating" class="text-[10px] text-[#4BE3FF]/70 hover:text-[#4BE3FF] transition">
+                                Değiştir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>

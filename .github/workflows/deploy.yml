@@ -1,0 +1,94 @@
+name: CD - Deploy to AWS
+
+on:
+  push:
+    branches: [ master, main ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '.gitignore'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-backend:
+    name: Deploy Lambda API (Backend)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Package Lambda Function
+        run: |
+          cd infra/lambda/ratings
+          zip -r ../ratings.zip index.mjs
+
+      - name: Update Lambda Code in AWS
+        run: |
+          aws lambda update-function-code \
+            --function-name parksezgi-ratings-api \
+            --zip-file fileb://infra/lambda/ratings.zip
+
+  deploy-frontend:
+    name: Deploy Static Site & Invalidate CDN (Frontend)
+    runs-on: ubuntu-latest
+    needs: [deploy-backend]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Resolve Dynamic AWS Resource Identifiers
+        id: resources
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "static_bucket=parksezgi-static-${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+          echo "ratings_bucket=parksezgi-ratings-${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+          
+          # Discover CloudFront Distribution ID tagged with Project=ParkSezgi
+          CF_ID="${{ secrets.CLOUDFRONT_DIST_ID }}"
+          if [ -z "$CF_ID" ]; then
+            CF_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?Id=='staticSiteOrigin']].Id | [0]" --output text)
+          fi
+          echo "cf_id=${CF_ID}" >> $GITHUB_OUTPUT
+
+      - name: Upload Frontend Files to S3
+        run: |
+          STATIC_BUCKET="${{ steps.resources.outputs.static_bucket }}"
+          aws s3 cp index.html s3://${STATIC_BUCKET}/index.html --content-type "text/html; charset=utf-8"
+          aws s3 cp app.js s3://${STATIC_BUCKET}/app.js --content-type "application/javascript; charset=utf-8"
+          aws s3 cp style.css s3://${STATIC_BUCKET}/style.css --content-type "text/css; charset=utf-8"
+          aws s3 cp scoring.js s3://${STATIC_BUCKET}/scoring.js --content-type "application/javascript; charset=utf-8"
+          aws s3 cp commercial_pois_db.json s3://${STATIC_BUCKET}/commercial_pois_db.json --content-type "application/json; charset=utf-8"
+          aws s3 cp offline_pilot_streets.json s3://${STATIC_BUCKET}/offline_pilot_streets.json --content-type "application/json; charset=utf-8"
+
+      - name: Ensure Initial Ratings Aggregate Exists (Never overwrite active data)
+        run: |
+          RATINGS_BUCKET="${{ steps.resources.outputs.ratings_bucket }}"
+          if ! aws s3 ls s3://${RATINGS_BUCKET}/ratings_aggregate.json; then
+            echo "Uploading initial ratings_aggregate.json..."
+            aws s3 cp ratings_aggregate.json s3://${RATINGS_BUCKET}/ratings_aggregate.json --content-type "application/json"
+          else
+            echo "Preserving live ratings_aggregate.json from S3."
+          fi
+
+      - name: Invalidate CloudFront CDN Cache
+        run: |
+          CF_ID="${{ steps.resources.outputs.cf_id }}"
+          aws cloudfront create-invalidation \
+            --distribution-id ${CF_ID} \
+            --paths "/*"

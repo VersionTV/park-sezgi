@@ -24,12 +24,15 @@ let currentTimeMode = 'weekday_day';
 let currentLoadedWays = [];
 let currentLoadedPOIs = [];
 let localCommercialPOIs = [];
+let commercialPOISpatialGrid = new Map();
 let offlinePilotStreets = [];
 let selectedStreetData = null;
 let searchDebounceTimer = null;
 let fetchDebounceTimer = null;
 let isOfflineFallbackActive = false;
 let currentSheetState = 'half'; // Mobil çekmece durumu: 'peek', 'half', 'full'
+let communityRatings = {}; // Topluluk değerlendirme verileri (aggregate)
+let currentUserRating = 0; // Modal'daki aktif yıldız seçimi
 
 // 1. Kademe: İstemci Tarafı Mekansal Önbellek (Spatial Street Cache)
 const spatialStreetCache = new Map();
@@ -83,12 +86,421 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEventListeners();
     initSearch();
     initMobileBottomSheet();
-    await Promise.all([
-        loadLocalCommercialPOIs(),
-        loadOfflinePilotStreets()
-    ]);
+
+    // 1. Çevrimdışı sokak geometrilerini yükle ve haritayı ANINDA başlat (0ms bekleme)
+    try {
+        await loadOfflinePilotStreets();
+    } catch (e) {
+        console.warn("Çevrimdışı sokaklar yüklenemedi:", e);
+    }
     setNewTarget(currentTarget.lat, currentTarget.lon, currentTarget.name);
+    // 2. Ticari mekan veritabanını ve topluluk verilerini arka planda paralel yükle
+    checkAndHandleAuthRedirect();
+    loadCommunityRatings();
+    loadLocalCommercialPOIs().then(() => {
+        if (currentLoadedWays && currentLoadedWays.length > 0) {
+            renderStreets();
+        }
+    }).catch(e => {
+        console.warn("Yerel ticari POI yükleme uyarısı:", e);
+    });
 });
+
+// Mekansal Izgara (Spatial Grid Index) Oluşturucu (O(1) Hızlı Arama)
+function buildPOISpatialGrid(pois) {
+    const grid = new Map();
+    for (let i = 0; i < pois.length; i++) {
+        const poi = pois[i];
+        if (typeof poi.lat !== 'number' || typeof poi.lon !== 'number') continue;
+        const key = `${Math.floor(poi.lat * 100)}_${Math.floor(poi.lon * 100)}`;
+        let bucket = grid.get(key);
+        if (!bucket) {
+            bucket = [];
+            grid.set(key, bucket);
+        }
+        bucket.push(poi);
+    }
+    return grid;
+}
+
+// Mekansal Izgara ile Yakındaki Ticari Mekanları Getir (14.000+ işletmede 0ms gecikme)
+function getNearbyCommercialPOIs(lat, lon, maxDistanceMeters = 85) {
+    const cLat = Math.floor(lat * 100);
+    const cLon = Math.floor(lon * 100);
+    const nearby = [];
+
+    // 1. Mekansal ızgaradan sadece 3x3 komşu hücreleri tara (O(1) lookup)
+    for (let dLat = -1; dLat <= 1; dLat++) {
+        for (let dLon = -1; dLon <= 1; dLon++) {
+            const key = `${cLat + dLat}_${cLon + dLon}`;
+            const bucket = commercialPOISpatialGrid.get(key);
+            if (bucket) {
+                for (let i = 0; i < bucket.length; i++) {
+                    const poi = bucket[i];
+                    if (calculateDistanceMeters(lat, lon, poi.lat, poi.lon) <= maxDistanceMeters) {
+                        nearby.push(poi);
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Canlı Overpass API'den çekilmiş mevcut POI'leri de ekle
+    for (let i = 0; i < currentLoadedPOIs.length; i++) {
+        const poi = currentLoadedPOIs[i];
+        if (calculateDistanceMeters(lat, lon, poi.lat, poi.lon) <= maxDistanceMeters) {
+            nearby.push(poi);
+        }
+    }
+
+    return nearby;
+}
+
+// ========================
+// ==========================================================
+// AWS Canlı Bulut Konfigürasyonu & Topluluk Değerlendirmesi
+// ==========================================================
+const AWS_CONFIG = {
+    apiUrl: 'https://tpp5klk5fe.execute-api.us-east-1.amazonaws.com/prod',
+    cognitoDomain: 'https://parksezgi.auth.us-east-1.amazoncognito.com',
+    cognitoClientId: '3qf9fpp3vlnlb13mu578s2k7in',
+    cloudfrontUrl: 'https://d1msnatkb8tlnq.cloudfront.net'
+};
+
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const REDIRECT_URI = IS_LOCAL ? 'http://localhost:5500' : AWS_CONFIG.cloudfrontUrl;
+
+// Kimlik Doğrulama (Cognito + Google OAuth)
+function checkAndHandleAuthRedirect() {
+    if (window.location.hash && window.location.hash.includes('id_token=')) {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const idToken = params.get('id_token');
+        if (idToken) {
+            try {
+                const payload = JSON.parse(atob(idToken.split('.')[1]));
+                localStorage.setItem('parksezgi_id_token', idToken);
+                localStorage.setItem('parksezgi_user', JSON.stringify({
+                    email: payload.email,
+                    name: payload.name || payload.email?.split('@')[0] || 'Kullanıcı',
+                    sub: payload.sub,
+                    exp: payload.exp
+                }));
+                showToast(`👋 Hoş geldin, ${payload.name || payload.email}!`);
+            } catch (e) {
+                console.error("Token çözümleme hatası:", e);
+            }
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    }
+    updateAuthUI();
+}
+
+function getCurrentUser() {
+    const userJson = localStorage.getItem('parksezgi_user');
+    const token = localStorage.getItem('parksezgi_id_token');
+    if (!userJson || !token) return null;
+    try {
+        const user = JSON.parse(userJson);
+        if (user.exp && user.exp * 1000 < Date.now()) {
+            logoutUser(false);
+            return null;
+        }
+        return user;
+    } catch (e) {
+        return null;
+    }
+}
+
+function getAuthToken() {
+    const user = getCurrentUser();
+    return user ? localStorage.getItem('parksezgi_id_token') : null;
+}
+
+function redirectToGoogleLogin() {
+    const params = new URLSearchParams({
+        client_id: AWS_CONFIG.cognitoClientId,
+        response_type: 'token',
+        scope: 'email openid profile',
+        redirect_uri: REDIRECT_URI,
+        identity_provider: 'Google'
+    });
+    window.location.href = `${AWS_CONFIG.cognitoDomain}/oauth2/authorize?${params.toString()}`;
+}
+
+function logoutUser(notify = true) {
+    localStorage.removeItem('parksezgi_id_token');
+    localStorage.removeItem('parksezgi_user');
+    updateAuthUI();
+    if (notify) showToast('Çıkış yapıldı.');
+}
+
+function updateAuthUI() {
+    const user = getCurrentUser();
+    const headerProfile = document.getElementById('user-profile-header');
+    const modalBadge = document.getElementById('user-auth-badge');
+    const authPromptCard = document.getElementById('auth-prompt-card');
+
+    if (headerProfile) {
+        if (user) {
+            headerProfile.innerHTML = `
+                <div class="flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-white/10 border border-white/20 text-xs text-[#FFF1FB] backdrop-blur-md shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="max-w-[75px] truncate font-medium text-[11px]">${user.name}</span>
+                    <button id="btn-logout-header" title="Çıkış Yap" class="text-[#FFF1FB]/50 hover:text-[#FF4FD8] ml-1 text-xs cursor-pointer font-bold">✕</button>
+                </div>
+            `;
+            document.getElementById('btn-logout-header')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                logoutUser();
+                refreshSelectedStreetDetail();
+            });
+        } else {
+            headerProfile.innerHTML = `
+                <button id="btn-login-header" class="py-1 px-3 rounded-full bg-[#4BE3FF]/15 hover:bg-[#4BE3FF]/25 border border-[#4BE3FF]/40 text-[#4BE3FF] text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shadow-sm active:scale-95">
+                    <span>Giriş Yap</span>
+                </button>
+            `;
+            document.getElementById('btn-login-header')?.addEventListener('click', () => {
+                redirectToGoogleLogin();
+            });
+        }
+    }
+
+    if (modalBadge) {
+        modalBadge.textContent = user ? `👤 ${user.name}` : '🔒 Giriş Gerekli';
+    }
+
+    if (authPromptCard) {
+        if (user) {
+            authPromptCard.classList.add('hidden');
+        } else {
+            authPromptCard.classList.remove('hidden');
+        }
+    }
+}
+
+// Cihaz kimliği (Yerel geliştirme fallback)
+function getOrCreateDeviceId() {
+    let id = localStorage.getItem('parksezgi_device_id');
+    if (!id) {
+        id = 'dev_' + crypto.randomUUID();
+        localStorage.setItem('parksezgi_device_id', id);
+    }
+    return id;
+}
+
+// Topluluk aggregate verilerini yükle (CloudFront / S3 statik JSON dosyası)
+async function loadCommunityRatings() {
+    try {
+        const cached = sessionStorage.getItem('parksezgi_ratings_cache');
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < 3 * 60 * 1000) {
+                communityRatings = data;
+                console.log(`📊 Topluluk verileri önbellekten yüklendi (${Object.keys(data).length} sokak)`);
+                return;
+            }
+        }
+        const aggregateUrl = '/ratings_aggregate.json?_t=' + Date.now();
+        const res = await fetch(aggregateUrl);
+        if (res.ok) {
+            communityRatings = await res.json();
+            sessionStorage.setItem('parksezgi_ratings_cache', JSON.stringify({
+                data: communityRatings,
+                timestamp: Date.now()
+            }));
+            console.log(`📊 Topluluk verileri yüklendi (${Object.keys(communityRatings).length} sokak)`);
+        }
+    } catch (e) {
+        console.warn('Topluluk verileri yüklenemedi:', e);
+    }
+}
+
+// Oy gönder (AWS API Gateway + DynamoDB)
+async function submitRating(wayId, rating, comment, lat, lon) {
+    const token = getAuthToken();
+    if (!token) {
+        showToast('⭐ Değerlendirme yapabilmek için lütfen Google ile giriş yapın.');
+        redirectToGoogleLogin();
+        return null;
+    }
+
+    try {
+        const res = await fetch(`${AWS_CONFIG.apiUrl}/ratings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ wayId: String(wayId), rating, comment: comment || '', lat, lon })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            communityRatings[String(wayId)] = data.aggregated;
+            sessionStorage.setItem('parksezgi_ratings_cache', JSON.stringify({
+                data: communityRatings,
+                timestamp: Date.now()
+            }));
+            return data;
+        } else if (res.status === 401) {
+            showToast('⚠️ Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+            logoutUser(false);
+            return null;
+        } else if (res.status === 429) {
+            showToast('⏳ Çok fazla istek gönderildi, lütfen biraz bekleyin.');
+            return null;
+        } else {
+            showToast('❌ Puan kaydedilemedi.');
+            return null;
+        }
+    } catch (e) {
+        console.error('Rating gönderme hatası:', e);
+        showToast('❌ Sunucuya bağlanılamadı.');
+        return null;
+    }
+}
+
+// Kendi oyunu sil (AWS API Gateway + DynamoDB)
+async function deleteRating(wayId) {
+    const token = getAuthToken();
+    if (!token) return null;
+
+    try {
+        const res = await fetch(`${AWS_CONFIG.apiUrl}/ratings`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ wayId: String(wayId) })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.aggregated && data.aggregated.count === 0) {
+                delete communityRatings[String(wayId)];
+            } else if (data.aggregated) {
+                communityRatings[String(wayId)] = data.aggregated;
+            }
+            sessionStorage.setItem('parksezgi_ratings_cache', JSON.stringify({
+                data: communityRatings,
+                timestamp: Date.now()
+            }));
+            return data;
+        }
+    } catch (e) {
+        console.error('Rating silme hatası:', e);
+        showToast('❌ Oy silinemedi.');
+    }
+    return null;
+}
+
+// Kendi oyunu getir (AWS API Gateway + DynamoDB)
+async function getMyRating(wayId) {
+    const token = getAuthToken();
+    if (!token) return { exists: false };
+
+    try {
+        const res = await fetch(`${AWS_CONFIG.apiUrl}/ratings/my?wayId=` + encodeURIComponent(String(wayId)), {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) return await res.json();
+    } catch (e) {
+        console.warn('Kendi oyum getirilemedi:', e);
+    }
+    return { exists: false };
+}
+
+// Modal'daki topluluk verilerini güncelle
+function updateCommunityDisplay(wayId) {
+    const data = communityRatings[String(wayId)];
+    const summaryEl = document.getElementById('community-rating-summary');
+    const starsDisplay = document.getElementById('community-stars-display');
+    const starsVisual = document.getElementById('community-stars-visual');
+    const medianText = document.getElementById('community-median-text');
+    const distSection = document.getElementById('community-distribution');
+
+    if (!data || data.count === 0) {
+        summaryEl.textContent = 'Henüz oy yok';
+        starsDisplay.classList.add('hidden');
+        distSection.classList.add('hidden');
+        return;
+    }
+
+    summaryEl.textContent = `${data.count} oy`;
+    starsDisplay.classList.remove('hidden');
+    distSection.classList.remove('hidden');
+
+    // Yıldızları göster
+    const stars = starsVisual.querySelectorAll('span');
+    for (let i = 0; i < 5; i++) {
+        if (i < Math.floor(data.median)) {
+            stars[i].className = 'text-sm star-filled';
+        } else if (i < data.median) {
+            stars[i].className = 'text-sm star-half';
+        } else {
+            stars[i].className = 'text-sm star-empty';
+        }
+        stars[i].textContent = '★';
+    }
+    medianText.textContent = `${data.median.toFixed(1)} / 5`;
+
+    // Dağılım çubukları
+    const maxCount = Math.max(...data.distribution, 1);
+    for (let i = 1; i <= 5; i++) {
+        const count = data.distribution[i - 1] || 0;
+        const pct = (count / maxCount) * 100;
+        const bar = document.getElementById('dist-bar-' + i);
+        const countEl = document.getElementById('dist-count-' + i);
+        if (bar) bar.style.width = pct + '%';
+        if (countEl) countEl.textContent = count;
+    }
+}
+
+// Yıldız seçici etkileşimi
+function initStarRatingUI() {
+    const container = document.getElementById('star-rating-input');
+    const label = document.getElementById('star-rating-label');
+    const commentSection = document.getElementById('rating-comment-section');
+    if (!container) return;
+
+    const LABELS = { 1: 'İmkansız', 2: 'Zor', 3: 'Orta', 4: 'Kolay', 5: 'Çok Kolay' };
+    const starBtns = container.querySelectorAll('.star-btn');
+
+    // Hover preview
+    starBtns.forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            const r = parseInt(btn.dataset.rating);
+            starBtns.forEach(b => {
+                const br = parseInt(b.dataset.rating);
+                b.classList.toggle('hover-preview', br <= r && !b.classList.contains('active'));
+            });
+            label.textContent = LABELS[r];
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            starBtns.forEach(b => b.classList.remove('hover-preview'));
+            if (currentUserRating > 0) {
+                label.textContent = LABELS[currentUserRating];
+            } else {
+                label.textContent = 'Tıkla ve değerlendir';
+            }
+        });
+
+        // Click to select
+        btn.addEventListener('click', () => {
+            const r = parseInt(btn.dataset.rating);
+            currentUserRating = r;
+            starBtns.forEach(b => {
+                const br = parseInt(b.dataset.rating);
+                b.classList.toggle('active', br <= r);
+                b.classList.remove('hover-preview');
+            });
+            label.textContent = LABELS[r];
+            commentSection.classList.remove('hidden');
+        });
+    });
+}
 
 // Yerel Yüksek Yoğunluklu POI Veritabanını Yükle
 async function loadLocalCommercialPOIs() {
@@ -96,7 +508,8 @@ async function loadLocalCommercialPOIs() {
         const res = await fetch('commercial_pois_db.json');
         if (res.ok) {
             localCommercialPOIs = await res.json();
-            console.log(`✓ ${localCommercialPOIs.length} adet yerel ticari mekan (Kameroğlu, Sahil, Vadi) yüklendi.`);
+            commercialPOISpatialGrid = buildPOISpatialGrid(localCommercialPOIs);
+            console.log(`✓ ${localCommercialPOIs.length} adet yerel ticari mekan yüklendi ve mekansal ızgaraya (Spatial Grid) indekslendi.`);
         }
     } catch (e) {
         console.warn("Yerel ticari POI dosyası yüklenemedi:", e);
@@ -116,32 +529,36 @@ async function loadOfflinePilotStreets() {
     }
 }
 
-// Çevrimdışı Paket Bildirim Rozeti Durumu
-function updateOfflineStatusBadge(isActive) {
+// Harita Canlı OSM / Yerel Bölge Veri Rozeti Durumu
+function updateOfflineStatusBadge(isOffline) {
     const badge = document.getElementById('offline-mode-badge');
     if (badge) {
-        if (isActive) {
-            badge.classList.remove('hidden');
-            badge.classList.add('inline-flex');
+        badge.classList.remove('hidden');
+        badge.classList.add('inline-flex');
+        if (isOffline) {
+            badge.className = 'inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#B45CFF]/20 text-[#4BE3FF] border border-[#4BE3FF]/40 items-center gap-1';
+            badge.innerHTML = '⚡ Yerel Bölge Paketi';
         } else {
-            badge.classList.add('hidden');
-            badge.classList.remove('inline-flex');
+            badge.className = 'inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 items-center gap-1';
+            badge.innerHTML = '🟢 Canlı OSM';
         }
     }
 }
 
-// Harita Başlatma ve Katman Yönetimi (OSM Tile Usage Policy Uyumlu)
+// Harita Başlatma ve Katman Yönetimi (Sıfır API Key, Sıfır Veri Yok Hatası)
 function initMap() {
     map = L.map('map', {
         zoomControl: false,
-        attributionControl: true // OSM & Basemap Lisans Kuralı: Atıf zorunludur
+        attributionControl: true, // OSM & Basemap Lisans Kuralı: Atıf zorunludur
+        minZoom: 12,
+        maxZoom: 17 // Esri Canvas katmanının en kararlı çalıştığı üst zoom sınırı
     }).setView([currentTarget.lat, currentTarget.lon], 16);
 
     currentTileLayerGroup = L.layerGroup().addTo(map);
     streetPolylinesLayerGroup = L.layerGroup().addTo(map);
     topBadgesLayerGroup = L.layerGroup().addTo(map);
 
-    // Varsayılan: Minimal Açık Gri (Esri Canvas - Asla API Key istemez, 403 Access Blocked hatası vermez)
+    // Varsayılan: Minimal Açık Gri (Esri Canvas - Asla API Key İstemez, Sıfır Hata)
     setMapTileStyle('minimal_gray');
 
     // Zoom kontrolü sağ alt
@@ -156,7 +573,7 @@ function initMap() {
     });
 }
 
-// Harita Katman & Renk Paleti Değiştirici (Sıfır API Key, Sıfır 403 Hatası, %100 Kararlı)
+// Harita Katman & Renk Paleti Değiştirici (Sıfır API Key, Sıfır 403, Kesintisiz Destek)
 function setMapTileStyle(styleKey) {
     currentTileLayerGroup.clearLayers();
     const mapEl = document.getElementById('map');
@@ -167,42 +584,47 @@ function setMapTileStyle(styleKey) {
     const esriAttr = 'Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &mdash; Esri, DeLorme, NAVTEQ, USGS, Intermap, TomTom, &copy; OpenStreetMap contributors';
 
     if (styleKey === 'minimal_gray') {
-        // Minimal Açık Gri: Esri World Light Gray Canvas (Temiz, sade, park çizgilerini mükemmel gösterir)
+        // Minimal Açık Gri: Esri World Light Gray Canvas (%100 Ücretsiz, Asla API Key İstemez)
+        // maxNativeZoom: 16 -> 17 zoom seviyesinde Esri'den veri istemez, Leaflet CSS ile ölçekler (Böylece "Map data not yet available" çıkmaz)
         const tile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
+            maxZoom: 17,
+            maxNativeZoom: 16,
             attribution: esriAttr
         });
         currentTileLayerGroup.addLayer(tile);
     } else if (styleKey === 'dark_clean') {
-        // Koyu Tema: Esri World Dark Gray Canvas (Gece sürüşü ve karanlık arayüz için ideal)
+        // Koyu Tema: Esri World Dark Gray Canvas (%100 Ücretsiz, Asla API Key İstemez)
         const tile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
+            maxZoom: 17,
+            maxNativeZoom: 16,
             attribution: esriAttr
         });
         currentTileLayerGroup.addLayer(tile);
     } else if (styleKey === 'street_detailed') {
         // Renkli Detaylı Sokak Haritası: Esri World Street Map (Türkçe cadde/sokak tabelaları ve bina blokları)
         const tile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
+            maxZoom: 18,
+            maxNativeZoom: 18,
             attribution: 'Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &mdash; Source: Esri, USGS, TomTom, &copy; OpenStreetMap contributors'
         });
         currentTileLayerGroup.addLayer(tile);
     } else if (styleKey === 'satellite') {
         // Gerçek Uydu Görünümü: Esri World Imagery (Kaldırımları, binaları ve gerçek asfaltı net gösterir)
         const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
+            maxZoom: 18,
+            maxNativeZoom: 18,
             attribution: 'Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a> &mdash; Source: Esri, Maxar, Earthstar, GeoEye, &copy; OpenStreetMap contributors'
         });
         currentTileLayerGroup.addLayer(sat);
     } else {
         // Standart Klasik OSM (Kullanıcı açıkça seçerse, referer korumalı)
         const std = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
+            maxZoom: 18,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
             referrerPolicy: 'origin'
         });
         std.on('tileerror', function() {
-            console.warn('OSM sunucusu 403 veya bağlantı engeli verdi; Esri Canvas katmanına geri dönülüyor.');
+            console.warn('OSM sunucusu bağlantı kısıtı verdi; Esri Canvas katmanına geri dönülüyor.');
             setMapTileStyle('minimal_gray');
         });
         currentTileLayerGroup.addLayer(std);
@@ -398,28 +820,53 @@ function initEventListeners() {
     // Modal Butonları
     document.getElementById('close-modal-btn')?.addEventListener('click', closeDetailModal);
 
-    document.getElementById('btn-report-duba')?.addEventListener('click', () => {
-        if (!selectedStreetData) return;
-        saveUserReport(selectedStreetData.way.id, 'duba_yasak');
-        showToast('⚠️ Duba / Park Yasağı bildirimi kaydedildi.');
-        renderStreets();
-        refreshSelectedStreetDetail();
+    // Yıldız değerlendirme UI etkileşimi
+    initStarRatingUI();
+
+    // Değerlendirme gönder butonu
+    document.getElementById('btn-submit-rating')?.addEventListener('click', async () => {
+        if (!selectedStreetData || currentUserRating === 0) return;
+        const comment = document.getElementById('rating-comment')?.value || '';
+        const midPoint = selectedStreetData.midPoint;
+        const result = await submitRating(
+            selectedStreetData.way.id,
+            currentUserRating,
+            comment,
+            midPoint[0],
+            midPoint[1]
+        );
+        if (result) {
+            showToast(`⭐ ${currentUserRating} yıldız değerlendirme kaydedildi!`);
+            renderStreets();
+            refreshSelectedStreetDetail();
+        }
     });
 
-    document.getElementById('btn-report-parked')?.addEventListener('click', () => {
+    // Değerlendirme sil butonu
+    document.getElementById('btn-delete-rating')?.addEventListener('click', async () => {
         if (!selectedStreetData) return;
-        saveUserReport(selectedStreetData.way.id, 'kolay_park');
-        showToast('⭐ Rahat park edildi bildirimi kaydedildi (+25 Puan).');
-        renderStreets();
-        refreshSelectedStreetDetail();
+        const result = await deleteRating(selectedStreetData.way.id);
+        if (result) {
+            showToast('🗑️ Değerlendirmen silindi.');
+            currentUserRating = 0;
+            renderStreets();
+            refreshSelectedStreetDetail();
+        }
     });
 
-    document.getElementById('btn-report-clear')?.addEventListener('click', () => {
-        if (!selectedStreetData) return;
-        saveUserReport(selectedStreetData.way.id, 'clear');
-        showToast('İşaretleme temizlendi.');
-        renderStreets();
-        refreshSelectedStreetDetail();
+    // Mevcut oyu değiştir butonu
+    document.getElementById('btn-change-rating')?.addEventListener('click', () => {
+        document.getElementById('user-existing-rating')?.classList.add('hidden');
+        document.getElementById('rating-comment-section')?.classList.remove('hidden');
+        const starBtns = document.querySelectorAll('#star-rating-input .star-btn');
+        starBtns.forEach(b => b.classList.remove('active'));
+        currentUserRating = 0;
+        document.getElementById('star-rating-label').textContent = 'Tıkla ve değerlendir';
+    });
+
+    // Modal Google ile Giriş Yap butonu
+    document.getElementById('btn-login-google')?.addEventListener('click', () => {
+        redirectToGoogleLogin();
     });
 }
 
@@ -504,20 +951,25 @@ async function fetchAndAnalyzeStreets(forceBypassCache = false) {
         out geom;
     `;
 
-    // Hızlı Failover için sıralı ve dinamik aynalar (3.5s per server)
-    const endpoints = [
-        'https://lz4.overpass-api.de/api/interpreter',
-        'https://overpass-api.de/api/interpreter',
-        'https://overpass.osm.ch/api/interpreter',
+    // Hızlı Failover için sıralı ve dinamik aynalar (Yerel Node Proxy + Çalışan Aynalar)
+    const endpoints = IS_LOCAL ? [
+        '/api/overpass', // 1. Yerel Node.js Canlı Proxy (En hızlı, sıfır CORS, sıfır IP engeli)
+        'https://overpass.openstreetmap.fr/api/interpreter', // 2. Çalışan Fransa aynası
         'https://overpass.kumi.systems/api/interpreter',
-        'https://overpass.private.coffee/api/interpreter'
+        'https://overpass.private.coffee/api/interpreter',
+        'https://lz4.overpass-api.de/api/interpreter'
+    ] : [
+        'https://overpass.openstreetmap.fr/api/interpreter', // 1. Çalışan Fransa aynası (Doğrudan CORS destekli)
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.private.coffee/api/interpreter',
+        'https://lz4.overpass-api.de/api/interpreter'
     ];
 
     let data = null;
     for (const url of endpoints) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s hızlı geçiş
+            const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s gerçekçi zaman aşımı
 
             const res = await fetch(url, {
                 method: 'POST',
@@ -633,21 +1085,19 @@ function renderStreets() {
             midPoint[0], midPoint[1]
         );
 
-        // Canlı OSM mekanları ile Yerel Yüksek Yoğunluklu Mekan Veritabanı birleştirilir
-        const allCandidatePOIs = [...currentLoadedPOIs, ...localCommercialPOIs];
-        const nearbyPOIs = allCandidatePOIs.filter(poi => {
-            const d = calculateDistanceMeters(midPoint[0], midPoint[1], poi.lat, poi.lon);
-            return d <= 85;
-        });
+        // Mekansal ızgara (Spatial Hash Map) ile O(1) yakın mekan filtresi (14.000+ işletmede sıfır gecikme)
+        const nearbyPOIs = getNearbyCommercialPOIs(midPoint[0], midPoint[1], 85);
 
         // V3 Skorlama: Koordinat parametresi (midPoint[0], midPoint[1]) ile Marina ve Bizimkent coğrafi kontrolü
+        const communityData = communityRatings[String(way.id)] || null;
         const scoreResult = calculateStreetScore(
             way, 
             nearbyPOIs, 
             currentTimeMode, 
             distanceToTarget, 
             midPoint[0], 
-            midPoint[1]
+            midPoint[1],
+            communityData
         );
 
         const streetItem = {
@@ -680,7 +1130,8 @@ function renderStreets() {
             });
         });
 
-        polyline.on('click', () => {
+        polyline.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
             selectStreet(streetItem);
         });
 
@@ -762,7 +1213,8 @@ function updateTopRecommendationsAndBadges(scoredStreets) {
         });
 
         const badgeMarker = L.marker(item.midPoint, { icon: badgeIcon, zIndexOffset: 500 - index * 10 });
-        badgeMarker.on('click', () => {
+        badgeMarker.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
             selectStreet(item);
             map.flyTo(item.midPoint, 17, { duration: 0.6 });
         });
@@ -842,18 +1294,17 @@ function refreshSelectedStreetDetail() {
     if (!selectedStreetData) return;
 
     const midPoint = selectedStreetData.midPoint;
-    const allCandidatePOIs = [...currentLoadedPOIs, ...localCommercialPOIs];
-    const nearbyPOIs = allCandidatePOIs.filter(poi => {
-        const d = calculateDistanceMeters(midPoint[0], midPoint[1], poi.lat, poi.lon);
-        return d <= 85;
-    });
+    // Mekansal ızgara (Spatial Hash Map) ile O(1) yakın mekan filtresi
+    const nearbyPOIs = getNearbyCommercialPOIs(midPoint[0], midPoint[1], 85);
+    const communityData = communityRatings[String(selectedStreetData.way.id)] || null;
     const scoreResult = calculateStreetScore(
         selectedStreetData.way,
         nearbyPOIs,
         currentTimeMode,
         selectedStreetData.distanceToTarget,
         midPoint[0],
-        midPoint[1]
+        midPoint[1],
+        communityData
     );
     selectedStreetData.scoreResult = scoreResult;
 
@@ -885,22 +1336,37 @@ function refreshSelectedStreetDetail() {
         breakdownList.appendChild(li);
     });
 
-    const reports = getUserReports();
-    const currentReport = reports[selectedStreetData.way.id];
-    const reportStatusDiv = document.getElementById('modal-report-status');
-    const clearBtn = document.getElementById('btn-report-clear');
+    // Topluluk verilerini göster
+    updateCommunityDisplay(selectedStreetData.way.id);
+    updateAuthUI();
 
-    if (currentReport) {
-        clearBtn.classList.remove('hidden');
-        if (currentReport.type === 'duba_yasak') {
-            reportStatusDiv.innerHTML = '<span class="text-[#FF4FD8] text-xs font-semibold">⚠️ Duba / park yasağı bildirimi kayıtlı.</span>';
-        } else if (currentReport.type === 'kolay_park') {
-            reportStatusDiv.innerHTML = '<span class="text-[#4BE3FF] text-xs font-semibold">⭐ Rahat park edildiği onaylandı.</span>';
+    // Yıldız seçiciyi sıfırla
+    currentUserRating = 0;
+    const starBtns = document.querySelectorAll('#star-rating-input .star-btn');
+    starBtns.forEach(b => { b.classList.remove('active'); b.classList.remove('hover-preview'); });
+    document.getElementById('star-rating-label').textContent = 'Tıkla ve değerlendir';
+    document.getElementById('rating-comment-section')?.classList.add('hidden');
+    document.getElementById('rating-comment').value = '';
+    document.getElementById('user-existing-rating')?.classList.add('hidden');
+    document.getElementById('btn-delete-rating')?.classList.add('hidden');
+
+    // Kullanıcının mevcut oyunu kontrol et
+    getMyRating(selectedStreetData.way.id).then(myRating => {
+        if (myRating.exists) {
+            currentUserRating = myRating.rating;
+            // Yıldızları işaretle
+            starBtns.forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.rating) <= myRating.rating);
+            });
+            const LABELS = { 1: 'İmkansız', 2: 'Zor', 3: 'Orta', 4: 'Kolay', 5: 'Çok Kolay' };
+            document.getElementById('star-rating-label').textContent = LABELS[myRating.rating];
+            document.getElementById('rating-comment-section')?.classList.remove('hidden');
+            document.getElementById('btn-delete-rating')?.classList.remove('hidden');
+            if (myRating.comment) {
+                document.getElementById('rating-comment').value = myRating.comment;
+            }
         }
-    } else {
-        clearBtn.classList.add('hidden');
-        reportStatusDiv.innerHTML = '<span class="text-[#FFF1FB]/50 text-xs">Henüz bir bildirim yok.</span>';
-    }
+    });
 }
 
 function closeDetailModal() {
